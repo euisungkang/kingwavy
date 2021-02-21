@@ -18,7 +18,7 @@ client.on('message', message => {
         channel.send('ping');
     }
     else if (message.content == '#introduce') {
-        channel.send('Sup Bitch')
+        channel.send('Yo')
     }
 
 });
