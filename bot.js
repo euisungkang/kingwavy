@@ -21,16 +21,16 @@ client.on('message', message => {
         //console.log(message.channel.id + "      " + message)
         let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
 
-        if (message.content == '#ping') {
+        if (message.content == '$ping') {
             output_channel.send('pong');
         }
-        else if (message.content == '#pong') {
+        else if (message.content == '$pong') {
             output_channel.send('ping');
         }
-        else if (message.content == '#introduce') {
+        else if (message.content == '$introduce') {
             output_channel.send('Yo');
         }
-        else if (message.content == '#porn') {
+        else if (message.content == '$porn') {
             postVideo();
         }
 
