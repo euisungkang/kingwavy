@@ -7,11 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-
     "discord.js": "11.1.0",
-
-    "request": "2.81.0"
-
+    "html-metadata-parser": "^1.0.3",
+    "node-cron": "^2.0.3",
+    "pornsearch": "^2.4.3"
   },
   "author": "",
   "license": "MIT"
