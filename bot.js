@@ -67,12 +67,10 @@ async function postVideo () {
 
 
             let thumbnail = metadata.image
-            //Sending image
-            output_channel.send({
-                file: thumbnail
-            });
-            //Sending description
-            output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url);
+
+
+            //Sending description and image
+            output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url, {files: [thumbnail]});
         })
     });
 }
