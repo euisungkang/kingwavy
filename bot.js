@@ -1,41 +1,50 @@
 const Discord = require('discord.js');
 const Meta = require('html-metadata-parser');
+const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
-const Pornsearch = require('pornsearch')
+const Pornsearch = require('pornsearch');
 const client = new Discord.Client();
 
-client.on('ready', () => {
-    console.log('I am ready!');
-});
-
 client.login(process.env.BOT_TOKEN);
+//client.login('')
+
+let ldb_id;
+let ldb_channel;
+
+client.on('ready', async () => {
+    console.log("help pls")
+
+    ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
+
+    let ldbEmbed = await leaderboard.getEmbed(client);
+    let msg = await ldb_channel.send(ldbEmbed)
+
+    ldb_id = msg.id
+});
 
 cron.schedule('00 5 * * *', () => {
     console.log('Running cron');
     postVideo();
 })
 
+cron.schedule('00 * * * *', async () => {
+    console.log("updating")
+
+    ldb_channel.messages.fetch(ldb_id).then(async res => {
+        let ldbEmbed = await leaderboard.getEmbed(client);
+        res.edit(ldbEmbed)
+    })
+})
+
 client.on('message', message => {
     if (message.channel.id = process.env.INPUT_CHANNEL) {
 
         //console.log(message.channel.id + "      " + message)
-        let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
+        //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
 
-        if (message.content == '$ping') {
-            output_channel.send('pong');
-        }
-        else if (message.content == '$pong') {
-            output_channel.send('ping');
-        }
-        else if (message.content == '$introduce') {
-            output_channel.send('Yo');
-        }
-        else if (message.content == '$porn') {
+        if (message.content == '$porn') {
             postVideo();
         }
-
-    } else {
-        console.log("Not in general")
     }
 });
 
@@ -51,7 +60,7 @@ async function postVideo () {
 
         Meta.parser(video.url, async (err, result) => {
             //Get output channel and data of video
-            let output_channel = await client.channels.get(process.env.OUTPUT_CHANNEL);
+            let output_channel = await client.channels.fetch(process.env.OUTPUT_CHANNEL);
             let metadata = await result.og
 
             console.log(metadata)
@@ -67,3 +76,4 @@ async function postVideo () {
         })
     });
 }
+
