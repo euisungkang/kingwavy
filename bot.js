@@ -27,7 +27,7 @@ cron.schedule('00 5 * * *', () => {
     postVideo();
 })
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('00 * * * *', async () => {
     console.log("updating")
 
     ldb_channel.messages.fetch(ldb_id).then(async res => {
