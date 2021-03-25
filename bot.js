@@ -25,7 +25,7 @@ cron.schedule('00 5 * * *', () => {
     postVideo();
 })
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('00 * * * *', async () => {
     console.log("updating")
 
     let ldbEmbed = await leaderboard.getEmbed(client);
