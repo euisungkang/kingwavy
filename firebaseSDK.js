@@ -19,7 +19,7 @@ async function getTopWallets() {
 
     let index = 0;
     for (let k of sorted.keys()) {
-        if (index > 4) {
+        if (index > 8) {
           sorted.delete(k);
         }
         index++;
@@ -28,6 +28,18 @@ async function getTopWallets() {
     return sorted;
 }
 
+async function getProducts() {
+  const products = await db.collection('products').get();
+  let productArray = [];
+
+  await products.docs.map(doc => {
+    productArray.push(doc.data())
+  })
+
+  return productArray;
+}
+
 module.exports = {
-    getTopWallets : getTopWallets
+    getTopWallets : getTopWallets,
+    getProducts : getProducts
 }

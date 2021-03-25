@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const Meta = require('html-metadata-parser');
+const market = require('./market')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
@@ -8,16 +9,17 @@ const client = new Discord.Client();
 client.login(process.env.BOT_TOKEN);
 //client.login('')
 
-let msg;
-let ldb_channel;
-
 client.on('ready', async () => {
     console.log("help pls")
 
-    ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
+    // Update markets
+    let mkt_channel = await client.channels.fetch(proces.env.MARKET_CHANNEL)
+    marketUpdate(mkt_channel)
 
-    let ldbEmbed = await leaderboard.getEmbed(client);
-    msg = await ldb_channel.send(ldbEmbed)
+    // Update leaderboards
+    let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
+    leaderboardUpdate(ldb_channel);
+
 });
 
 cron.schedule('00 5 * * *', () => {
@@ -25,12 +27,37 @@ cron.schedule('00 5 * * *', () => {
     postVideo();
 })
 
-cron.schedule('00 * * * *', async () => {
-    console.log("updating")
-
-    let ldbEmbed = await leaderboard.getEmbed(client);
-    msg.edit(ldbEmbed)
+cron.schedule('* * * * *', async () => {
+    let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
+    leaderboardUpdate(ldb_channel)
 })
+
+let ldbID = '824439874022539305'
+
+async function leaderboardUpdate(channel) {
+    console.log("updating ldb");
+    let ldbEmbed = await leaderboard.getEmbed(client);
+
+    let exists = true;
+    try {
+        await channel.messages.fetch(ldbID)
+    } catch (error) {
+        console.error(error)
+        exists = false;
+    } finally {
+        if (!exists) {
+            let msg = await channel.send(ldbEmbed)
+            ldbID = msg.id
+        } else {
+            let msg = await channel.messages.fetch(ldbID)
+            msg.edit(ldbEmbed);
+        }
+    }
+}
+
+async function marketUpdate(channel) {
+    let embed = await market.updateMarket(channel);
+}
 
 // client.on('message', message => {
 //     if (message.channel.id = process.env.INPUT_CHANNEL) {
