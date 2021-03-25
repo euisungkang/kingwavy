@@ -27,7 +27,7 @@ cron.schedule('00 5 * * *', () => {
     postVideo();
 })
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('00 * * * *', async () => {
     let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
     leaderboardUpdate(ldb_channel)
 })
