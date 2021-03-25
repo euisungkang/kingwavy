@@ -41,6 +41,8 @@ client.on('message', message => {
         if (message.content == '$porn') {
             postVideo();
         }
+    } else {
+        return;
     }
 });
 
