@@ -8,7 +8,7 @@ const client = new Discord.Client();
 client.login(process.env.BOT_TOKEN);
 //client.login('')
 
-let ldb_id;
+let msg;
 let ldb_channel;
 
 client.on('ready', async () => {
@@ -17,9 +17,7 @@ client.on('ready', async () => {
     ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
 
     let ldbEmbed = await leaderboard.getEmbed(client);
-    let msg = await ldb_channel.send(ldbEmbed)
-
-    ldb_id = msg.id
+    msg = await ldb_channel.send(ldbEmbed)
 });
 
 cron.schedule('00 5 * * *', () => {
@@ -27,13 +25,11 @@ cron.schedule('00 5 * * *', () => {
     postVideo();
 })
 
-cron.schedule('00 * * * *', async () => {
+cron.schedule('* * * * *', async () => {
     console.log("updating")
 
-    ldb_channel.messages.fetch(ldb_id).then(async res => {
-        let ldbEmbed = await leaderboard.getEmbed(client);
-        res.edit(ldbEmbed)
-    })
+    let ldbEmbed = await leaderboard.getEmbed(client);
+    msg.edit(ldbEmbed)
 })
 
 client.on('message', message => {
