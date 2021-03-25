@@ -32,17 +32,17 @@ cron.schedule('* * * * *', async () => {
     msg.edit(ldbEmbed)
 })
 
-// client.on('message', message => {
-//     if (message.channel.id = process.env.INPUT_CHANNEL) {
+client.on('message', message => {
+    if (message.channel.id = process.env.INPUT_CHANNEL) {
 
-//         //console.log(message.channel.id + "      " + message)
-//         //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
+        //console.log(message.channel.id + "      " + message)
+        //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
 
-//         if (message.content == '$porn') {
-//             postVideo();
-//         }
-//     }
-// });
+        if (message.content == '$porn') {
+            postVideo();
+        }
+    }
+});
 
 // //Call function to post video on given channelID
 // async function postVideo () {
