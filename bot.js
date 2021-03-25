@@ -13,7 +13,7 @@ client.on('ready', async () => {
     console.log("help pls")
 
     // Update markets
-    let mkt_channel = await client.channels.fetch(proces.env.MARKET_CHANNEL)
+    let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     marketUpdate(mkt_channel)
 
     // Update leaderboards
