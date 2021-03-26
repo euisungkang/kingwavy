@@ -8,7 +8,7 @@ const Pornsearch = require('pornsearch');
 const client = new Discord.Client();
 
 client.login(process.env.BOT_TOKEN);
-//client.login('')
+//client.login()
 
 client.on('ready', async () => {
     console.log("help pls")
@@ -75,11 +75,11 @@ async function marketUpdate(channel) {
 async function casinoUpdate(channel) {
     let msg = await casino.updateCasino(channel);
     msg.react('🌓')
-    msg.react('♦')
-    msg.react('🃏')
+    // msg.react('♦')
+    // msg.react('🃏')
 
-    //const filter = (reaction, user) => reaction.emoji.name == '🌓' && user.id != msg.author.id
-    //casino.awaitCasinoReaction(client, msg, channel, filter)
+    const filter = (reaction, user) => reaction.emoji.name == '🌓' && user.id != msg.author.id
+    casino.awaitCasinoReaction(client, msg, channel, filter)
 }
 
 async function votingSystem() {
