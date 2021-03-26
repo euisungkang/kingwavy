@@ -5,7 +5,6 @@ const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
-const raffle = require('../Queen Wavy/raffle');
 const client = new Discord.Client();
 
 client.login(process.env.BOT_TOKEN);
