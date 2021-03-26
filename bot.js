@@ -1,13 +1,15 @@
 const Discord = require('discord.js');
 const Meta = require('html-metadata-parser');
 const market = require('./market')
+const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
+const raffle = require('../Queen Wavy/raffle');
 const client = new Discord.Client();
 
-//client.login(process.env.BOT_TOKEN);
-client.login(process.env.BOT_TOKEN)
+client.login(process.env.BOT_TOKEN);
+//client.login('')
 
 client.on('ready', async () => {
     console.log("help pls")
@@ -16,6 +18,11 @@ client.on('ready', async () => {
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     let mkt_channel = await client.channels.fetch('820051777650556990')
     marketUpdate(mkt_channel)
+
+    //Update casinos
+    //let csn_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
+    let csn_channel = await client.channels.fetch('824869877306621982')
+    casinoUpdate(csn_channel)
 
     // Update leaderboards
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
@@ -59,7 +66,21 @@ async function leaderboardUpdate(channel) {
 }
 
 async function marketUpdate(channel) {
-    let embed = await market.updateMarket(channel);
+    let msg = await market.updateMarket(channel);
+
+    msg.react('<:HentaiCoin:814968693981184030>')
+    const filter = (reaction, user) => reaction.emoji.id == '814968693981184030' && user.id != msg.author.id
+    market.awaitMarketReaction(msg, channel, filter)
+}
+
+async function casinoUpdate(channel) {
+    let msg = await casino.updateCasino(channel);
+    msg.react('🌓')
+    msg.react('♦')
+    msg.react('🃏')
+
+    //const filter = (reaction, user) => reaction.emoji.name == '🌓' && user.id != msg.author.id
+    //casino.awaitCasinoReaction(client, msg, channel, filter)
 }
 
 async function votingSystem() {
@@ -112,29 +133,29 @@ async function votingSystem() {
 // });
 
 //Call function to post video on given channelID
-async function postVideo () {
-    let Searcher = new Pornsearch('');
+// async function postVideo () {
+//     let Searcher = new Pornsearch('');
 
-    Searcher.videos().
-    then(videos => {
-        let total_videos = videos.length - 1
-        let video_number = Math.round(Math.random() * (total_videos - 1) + 1)
-        let video = videos[video_number]
+//     Searcher.videos().
+//     then(videos => {
+//         let total_videos = videos.length - 1
+//         let video_number = Math.round(Math.random() * (total_videos - 1) + 1)
+//         let video = videos[video_number]
 
-        Meta.parser(video.url, async (err, result) => {
-            //Get output channel and data of video
-            let output_channel = await client.channels.fetch(process.env.OUTPUT_CHANNEL);
-            let metadata = await result.og
+//         Meta.parser(video.url, async (err, result) => {
+//             //Get output channel and data of video
+//             let output_channel = await client.channels.fetch(process.env.OUTPUT_CHANNEL);
+//             let metadata = await result.og
 
-            console.log(metadata)
-
-
-            let thumbnail = metadata.image
+//             console.log(metadata)
 
 
-            //Sending description and image
-            output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url, {files: [thumbnail]});
-        })
-    });
-}
+//             let thumbnail = metadata.image
+
+
+//             //Sending description and image
+//             output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url, {files: [thumbnail]});
+//         })
+//     });
+// }
 

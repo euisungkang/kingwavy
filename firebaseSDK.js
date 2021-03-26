@@ -39,7 +39,19 @@ async function getProducts() {
   return productArray;
 }
 
+async function getCurrency(id) {
+  let user = db.collection('wallets').doc(id);
+
+  const doc = await user.get();
+  if (doc.exists) {
+      return doc.data().currency;
+  }
+
+  return 0;
+}
+
 module.exports = {
     getTopWallets : getTopWallets,
-    getProducts : getProducts
+    getProducts : getProducts,
+    getCurrency : getCurrency
 }
