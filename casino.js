@@ -109,15 +109,13 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
 
         raise = false;
         game.edit(embed)
-
-
-
         
         let filter;
         filter = (reaction, user) => ((reaction.emoji.id == '825059935662243882' || reaction.emoji.id == '825059935951126548')
                                      && user.id == lowest.player.id) || (reaction.emoji.name == '❌' && (user.id == player1.id || user.id == player2.id))
 
-        let collected = await game.awaitReactions(filter, { max: 1 })
+        
+        let collected = await game.awaitReactions(filter, { max: 1, time: 30000, errors: ['time']})
         let emoji = collected.first().emoji.name
 
         if (firstTime && emoji == '❌') {
@@ -220,14 +218,14 @@ async function winnerMessage(embed, winner, loser, pot) {
     )
 }
 
-async function multiplayerRegister(client, channel, user) {
+async function multiplayerRegister(client, channel, player1) {
     let toreturn = []
 
-    let multiplayer = await channel.send("<@" + user.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)")
+    let multiplayer = await channel.send("<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)")
 
-    let filter = (m) => m.author.id == user.id;
+    let filter = (m) => m.author.id == player1.id;
 
-    // If user doesn't respond to user prompt
+    // If player1 doesn't respond to player1 prompt
     let collected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
         multiplayer.delete()
         return null;
@@ -240,7 +238,7 @@ async function multiplayerRegister(client, channel, user) {
     let player2ID = (collected.first().content).match(/(\d+)/)
 
     if (player2ID == null) {
-        let errMSG = await channel.send("Please enter a valid user :unamused:")
+        let errMSG = await channel.send("Please enter a valid player1 :unamused:")
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
         
@@ -253,7 +251,7 @@ async function multiplayerRegister(client, channel, user) {
     }
 
     let player2 = await client.users.fetch(player2ID[0]).catch(async err => {
-        let errMSG = await channel.send("Please enter a valid user :unamused:")
+        let errMSG = await channel.send("Please enter a valid player1 :unamused:")
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
 
@@ -267,10 +265,12 @@ async function multiplayerRegister(client, channel, user) {
         toreturn[0] = null
         return toreturn
     }
-    
-    let starting_bet = await channel.send("<@" + user.id + "> Now choose a starting bet\nPlease enter a number (max 30)")
 
-    let filter2 = (m) => m.author.id == user.id;
+    sendConfirmation(player1, player1)
+    
+    let starting_bet = await channel.send("<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)")
+
+    let filter2 = (m) => m.author.id == player1.id;
     let collected2 = await channel.awaitMessages(filter2, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
         channel.messages.fetch(collected.first().id).then(m => m.delete())
         multiplayer.delete()
@@ -300,7 +300,7 @@ async function multiplayerRegister(client, channel, user) {
         return toreturn;
     }
 
-    //player2.send("Confirm")
+
 
     channel.messages.fetch(collected.first().id).then(m => m.delete())
     channel.messages.fetch(collected2.first().id).then(m => m.delete())
@@ -311,6 +311,16 @@ async function multiplayerRegister(client, channel, user) {
     toreturn.push(stb)
 
     return toreturn;
+}
+
+async function sendConfirmation(user, source) {
+    let embed = await new Discord.MessageEmbed()
+    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Casino Confirmation")
+    .setAuthor(source.username)
+    .setDescription(source.username + " has started a **Black and White** game! \n\nCheck the 【 𝓦 𝓪 𝓿 𝔂 】 casino to play. The game will automatically quit in 30 seconds.")
+    .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
+
+    user.send(embed);
 }
 
 async function getEmbed() {
