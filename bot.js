@@ -132,29 +132,29 @@ async function votingSystem() {
 // });
 
 //Call function to post video on given channelID
-// async function postVideo () {
-//     let Searcher = new Pornsearch('');
+async function postVideo () {
+    let Searcher = new Pornsearch('');
 
-//     Searcher.videos().
-//     then(videos => {
-//         let total_videos = videos.length - 1
-//         let video_number = Math.round(Math.random() * (total_videos - 1) + 1)
-//         let video = videos[video_number]
+    Searcher.videos().
+    then(videos => {
+        let total_videos = videos.length - 1
+        let video_number = Math.round(Math.random() * (total_videos - 1) + 1)
+        let video = videos[video_number]
 
-//         Meta.parser(video.url, async (err, result) => {
-//             //Get output channel and data of video
-//             let output_channel = await client.channels.fetch(process.env.OUTPUT_CHANNEL);
-//             let metadata = await result.og
+        Meta.parser(video.url, async (err, result) => {
+            //Get output channel and data of video
+            let output_channel = await client.channels.fetch(process.env.OUTPUT_CHANNEL);
+            let metadata = await result.og
 
-//             console.log(metadata)
-
-
-//             let thumbnail = metadata.image
+            console.log(metadata)
 
 
-//             //Sending description and image
-//             output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url, {files: [thumbnail]});
-//         })
-//     });
-// }
+            let thumbnail = metadata.image
+
+
+            //Sending description and image
+            output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url, {files: [thumbnail]});
+        })
+    });
+}
 
