@@ -7,7 +7,7 @@ const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
 const client = new Discord.Client();
 
-client.login('ODEzMDIxNTQzOTk4NTU0MTIy.YDJPUQ.4MZarN9EDWUyilzwHFOdqHyz2Ss');
+client.login(process.env.BOT_TOKEN);
 //client.login()
 
 client.on('ready', async () => {
