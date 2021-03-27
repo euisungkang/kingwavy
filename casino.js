@@ -243,6 +243,8 @@ async function winnerMessage(embed, winner, loser, pot) {
         { name: winner.player.username + " has " + (winner.wallet + (pot/2)) + " <:HentaiCoin:814968693981184030>", value: '\u200B' },
         { name: loser.player.username + " has " + (loser.wallet - (pot/2)) + " <:HentaiCoin:814968693981184030>", value: '\u200B' },
     )
+    await database.addCurrency(winner.player, (pot / 2))
+    await database.removeCurrency(loser.player, (pot /2))
 }
 
 async function multiplayerRegister(client, channel, player1) {
@@ -358,7 +360,7 @@ async function getEmbed() {
                   + "Click the emoji of the game you'd like to play")
 	.setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
 	.addFields(
-        { name: "Black and White: 🌓", value: '```yaml\nOnline, no Penalty\n```' },
+        { name: "Black and White: 🌓", value: '```yaml\nOnline. There is a penalty\n```' },
         { name: "Blackjack: ♦", value: '```diff\n-Offline\n```'},
         { name: "Poker: 🃏", value: '```diff\n-Offline\n```'}
     )

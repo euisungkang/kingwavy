@@ -7,8 +7,10 @@ const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
 const client = new Discord.Client();
 
-client.login(process.env.BOT_TOKEN);
-//client.login()
+const database = require('./firebaseSDK')
+
+//client.login('');
+client.login(process.env.BOT_TOKEN)
 
 client.on('ready', async () => {
     console.log("help pls")
@@ -143,7 +145,7 @@ async function postVideo () {
 
         Meta.parser(video.url, async (err, result) => {
             //Get output channel and data of video
-            let output_channel = await client.channels.fetch(process.env.OUTPUT_CHANNEL);
+            let output_channel = await client.channels.fetch('813223964997451788');
             let metadata = await result.og
 
             console.log(metadata)

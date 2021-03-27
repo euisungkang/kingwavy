@@ -50,8 +50,60 @@ async function getCurrency(id) {
   return 0;
 }
 
+async function addCurrency(user, amount) {
+  let id = user.id
+  let name = user.username
+
+  console.log("ID: " + id + "    name:" + name + "    amount: " + amount);
+
+  let userDB = db.collection('wallets').doc(id);
+  let aggregate_amount = amount;
+
+  const doc = await userDB.get();
+  if (doc.exists) {
+      aggregate_amount += doc.data().currency;
+      console.log(doc.data());
+  }
+
+  await userDB.set({
+      userID: id,
+      name: name,
+      currency: aggregate_amount
+  }).then(() => {
+      console.log("Document written successfully");
+  }).catch(err => {
+      console.log("Error: " + err);
+  })
+};
+
+async function removeCurrency(user, amount) {
+  let id = user.id
+  let name = user.username
+
+  let userDB = db.collection('wallets').doc(id);
+  let aggregate_amount;
+
+  const doc = await userDB.get();
+  if (doc.exists) {
+      aggregate_amount = doc.data().currency - amount;
+      console.log(doc.data());
+  }
+
+  await userDB.set({
+      userID: id,
+      name: name,
+      currency: aggregate_amount
+  }).then(() => {
+      console.log("Document written successfully");
+  }).catch(err => {
+      console.log("Error: " + err);
+  })
+}
+
 module.exports = {
     getTopWallets : getTopWallets,
     getProducts : getProducts,
-    getCurrency : getCurrency
+    getCurrency : getCurrency,
+    addCurrency : addCurrency,
+    removeCurrency : removeCurrency
 }
