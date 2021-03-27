@@ -23,7 +23,8 @@ client.on('ready', async () => {
     //Update casinos
     //let csn_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     let csn_channel = await client.channels.fetch('824869877306621982')
-    casinoUpdate(csn_channel)
+    let csn_channel2 = await client.channels.fetch('825492808013316176')
+    casinoUpdate(csn_channel, csn_channel2)
 
     // Update leaderboards
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
@@ -44,6 +45,7 @@ cron.schedule('00 * * * *', async () => {
 })
 
 let ldbID = '824439874022539305'
+
 
 async function leaderboardUpdate(channel) {
     console.log("updating ldb");
@@ -74,51 +76,24 @@ async function marketUpdate(channel) {
     market.awaitMarketReaction(msg, channel, filter)
 }
 
-async function casinoUpdate(channel) {
-    let msg = await casino.updateCasino(channel);
+let csnID = '824874877261316106'
+let csnID2 = '825495953438933102'
+
+async function casinoUpdate(channel, channel2) {
+    let msg = await casino.updateCasino(channel, csnID);
+    let msg2 = await casino.updateCasino(channel2, csnID2)
     msg.react('🌓')
-    // msg.react('♦')
-    // msg.react('🃏')
+    msg.react('♦')
+    msg.react('🃏')
+    msg2.react('🌓')
+    msg2.react('♦')
+    msg2.react('🃏')
 
-    const filter = (reaction, user) => reaction.emoji.name == '🌓' && user.id != msg.author.id
+    // const filter = (reaction, user) => (reaction.emoji.name == '🌓' || reaction.emoji.name == '♦') && user.id != msg.author.id
+    const filter = (reaction, user) => (reaction.emoji.name == '🌓') && user.id != msg.author.id
+    const filter2 = (reaction, user) => (reaction.emoji.name == '🌓') && user.id != msg2.author.id
     casino.awaitCasinoReaction(client, msg, channel, filter)
-}
-
-async function votingSystem() {
-    let vc = await client.channels.fetch('824740900567646248')
-    let m = await vc.messages.fetch('824740965214060574')
-    let e = await new Discord.MessageEmbed()
-    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Channel Names")
-    .setDescription("React with the emoji corresponding to whichever name you like. "
-                +   "You can vote for multiple names. The names with the most votes will be added to 𝓪𝓻𝓬𝓪𝓭𝓮. \n\n"
-                +   "**Wavy members can continue giving suggestions and the list will be updated**\n\n"
-                +   "**NOTE** These names are not final, they can be edited to fit the vaporwave theme once voted on")
-    .setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
-    .addFields(
-        { name: '\u200B', value: '\u200B' },
-        { name: '微 𝕨𝕖𝕚 𝕓𝕚 笔', value: '🔥'},
-        { name: 'ꜱʜᴀᴛᴛᴇʀᴇᴅ ᴅɪꜱᴋ', value: '☕'},
-        { name: '日本語プレス 1', value: '🎇'},
-        { name: 'joystation', value: '🙏'},
-        { name: 'deluxe edition', value: '🚬'},
-        { name: 'Neon Public', value: '🚀'},
-        { name: 'Dialup Dreams', value: '😍'},
-        { name: 'Gucci Gang', value: '🚷'},
-        { name: 'Obunga Boys', value: '👨🏿'},
-        { name: "Lion's Libido", value: '🦁'}
-    )
-
-    m.react('🔥')
-    m.react('☕')
-    m.react('🎇')
-    m.react('🙏')
-    m.react('🚬')
-    m.react('🚀')
-    m.react('😍')
-    m.react('🚷')
-    m.react('👨🏿')
-    m.react('🦁')
-    m.edit(e)
+    casino.awaitCasinoReaction(client, msg2, channel2, filter2)
 }
 
 // client.on('message', message => {
