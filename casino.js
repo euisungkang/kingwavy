@@ -48,7 +48,6 @@ async function awaitCasinoReaction(client, message, channel, filter) {
 
 async function playBlackAndWhite(channel, player1, player2, starting_bet) {
     let round = 1;
-    let firstTime = true;
     let alternate = false
     let pot = starting_bet * 2
     let lowest_wallet = [];
@@ -60,7 +59,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
  
     const embed = await new Discord.MessageEmbed()
     .setTitle("Black and White")
-    .setDescription("Choose Black or White, and raise for Gray. \nMake your selection by reacting to the emojis.")
+    .setDescription("Choose Black or White, and raise for Gray. \nMake your selection by reacting to the emojis.\n\n**Player 2 has to click ✅ to start the game**")
     .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
     .addFields(
         { name: '\u200B', value: '\u200B' },
@@ -75,10 +74,48 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
 
     let raise;
     let game = await channel.send(embed);
+    game.react('✅')
     game.react('❌')
-    game.react('<:Black:825059935662243882>')
-    game.react('<:White:825059935951126548>')
+        
 
+    let filterConfirm = (reaction, user) => ((reaction.emoji.name == '✅' && user.id == player2.id) ||
+                                            (reaction.emoji.name == '❌' && (user.id == player1.id || user.id == player2.id)))
+
+    let collectedConfirm = await game.awaitReactions(filterConfirm, { max: 1, time: 30000, errors: ['time']}).catch(err => {
+        console.log("Player didnt show up")
+        return null
+    })
+    if (collectedConfirm == null) {
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(7000);
+
+        game.delete()
+        return;
+    }
+    let emojiConfirm = collectedConfirm.first().emoji.name
+
+
+    if (emojiConfirm == '❌') {
+        let embed2 = await new Discord.MessageEmbed()
+        .setTitle("Black and White")
+        .setDescription("Choose Black or White, and raise for Gray. \nMake your selection by reacting to the emojis.\n")
+        .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
+        .addFields(
+            { name: '\u200B', value: '\u200B' },
+            { name: "GAME EXITING", value: '\u200B'}
+        )
+        game.edit(embed2)
+        game.reactions.cache.find(r => r.emoji.name == '✅').remove()
+        game.reactions.cache.find(r => r.emoji.name == '❌').remove()
+        
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(7000);
+
+        game.delete()
+        return;
+    }
+    game.reactions.cache.find(r => r.emoji.name == '✅').remove()
+    game.reactions.cache.find(r => r.emoji.name == '❌').remove()
 
     if (wallet1 > wallet2) {
         embed.addField(player2.username + " has less coins.\nMake your black or white selection first.", '\u200B')
@@ -98,6 +135,9 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
         highest.player = player2
     }
 
+    game.react('<:Black:825059935662243882>')
+    game.react('<:White:825059935951126548>')
+
     do {
         //Check if someone starts with an all in
         if (lowest_wallet[1] < pot / 2) {
@@ -110,8 +150,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
         raise = false;
         game.edit(embed)
         
-        let filter;
-        filter = (reaction, user) => ((reaction.emoji.id == '825059935662243882' || reaction.emoji.id == '825059935951126548')
+        let filter = (reaction, user) => ((reaction.emoji.id == '825059935662243882' || reaction.emoji.id == '825059935951126548')
                                      && user.id == lowest.player.id) || (reaction.emoji.name == '❌' && (user.id == player1.id || user.id == player2.id))
 
         
@@ -123,24 +162,6 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
 
 
         let emoji = collected.first().emoji.name
-
-        if (firstTime && emoji == '❌') {
-            let embed2 = await new Discord.MessageEmbed()
-            .setTitle("Black and White")
-            .setDescription("Choose Black or White, and raise for Gray. \nMake your selection by reacting to the emojis.\n")
-            .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
-            .addFields(
-                { name: '\u200B', value: '\u200B' },
-                { name: "GAME EXITING", value: '\u200B'}
-            )
-            game.edit(embed2)
-            break;
-        }
-
-        if (firstTime) {
-            game.reactions.cache.find(r => r.emoji.name == '❌').remove()
-            firstTime = false;
-        }
 
         //Remove the reaction
         game.reactions.cache.find(r => r.emoji.name == emoji).users.remove(lowest.player.id)
@@ -323,7 +344,7 @@ async function sendConfirmation(user, source) {
     let embed = await new Discord.MessageEmbed()
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Casino Confirmation")
     .setAuthor(source.username)
-    .setDescription(source.username + " has started a **Black and White** game! \n\nCheck the 【 𝓦 𝓪 𝓿 𝔂 】 casino to play. The game will automatically quit in 30 seconds.")
+    .setDescription(source.username + " has started a **Black and White** game! \n\nCheck the 【 𝓦 𝓪 𝓿 𝔂 】 casino to play. \nThe game will automatically quit in 30 seconds unless you click ✅.")
     .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
 
     user.send(embed);
