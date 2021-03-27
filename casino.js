@@ -115,7 +115,13 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
                                      && user.id == lowest.player.id) || (reaction.emoji.name == '❌' && (user.id == player1.id || user.id == player2.id))
 
         
-        let collected = await game.awaitReactions(filter, { max: 1, time: 30000, errors: ['time']})
+        let collected = await game.awaitReactions(filter, { max: 1, time: 30000, errors: ['time']}).catch(err => {
+            console.log("Player didnt show up")
+            return null
+        })
+        if (collected == null) break;
+
+
         let emoji = collected.first().emoji.name
 
         if (firstTime && emoji == '❌') {
@@ -266,7 +272,7 @@ async function multiplayerRegister(client, channel, player1) {
         return toreturn
     }
 
-    sendConfirmation(player1, player1)
+    sendConfirmation(player2, player1)
     
     let starting_bet = await channel.send("<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)")
 
