@@ -5,10 +5,8 @@ async function playRPS(client, channel, player1, players, multiplayer) {
     let log = client.channels.fetch('825839129996296232').catch(err => {console.log(err)})
     let draw = false;
     let lowest_wallet = [];
-    let firstRound = true;
     let all_in = false;
 
-    let finalPlayers = []
     let finalMessages = []
 
     
@@ -199,6 +197,7 @@ async function playRPS(client, channel, player1, players, multiplayer) {
 }
 
 async function winnerMessage(msg, log, embed, winner, loser, pot, multiplayer) {
+    console.log(log)
     let w = await database.getCurrency(winner.id)
     let l = await database.getCurrency(loser.id)
 
