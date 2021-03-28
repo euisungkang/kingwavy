@@ -197,7 +197,7 @@ async function playRPS(channel, player1, players, multiplayer) {
     game.delete()
 }
 
-async function winnerMessage(msg, embed, winner, loser, pot) {
+async function winnerMessage(msg, embed, winner, loser, pot, multiplayer) {
     let w = await database.getCurrency(winner.id)
     let l = await database.getCurrency(loser.id)
 
