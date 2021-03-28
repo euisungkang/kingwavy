@@ -393,7 +393,7 @@ async function getEmbed() {
 	.setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
 	.addFields(
         { name: "Black and White: 🌓", value: '```yaml\nOnline, with penalty\n```' },
-        { name: "Rock Paper Scissors: ✊", value: '```yaml\nOnline, without penalty\n```' },
+        { name: "Rock Paper Scissors: ✊", value: '```yaml\nOnline, with penalty\n```' },
         { name: "Blackjack: ♦", value: '```diff\n-Offline\n```'},
         { name: "Poker: 🃏", value: '```diff\n-Offline\n```'}
     )
