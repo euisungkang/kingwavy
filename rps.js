@@ -172,10 +172,11 @@ async function playRPS(channel, player1, players) {
             draw = true;
             if (multiplayer){
                 pot = pot * 2;
-                embed.addField("Both players chose " + emoji1 + ". Pot is doubled <:PogO:804089420020973568>", '\u200B')
+                embed.addField("Both players chose " + emoji1 + ". Pot is doubled <:PogO:804089420020973568>\n**Pot: **" + pot, '\u200B')
             } else {
-                embed.addField("Both players chose " + emoji1 + ". Pot is increased 50% <:PogO:804089420020973568>", '\u200B')
-                pot = Math.round(pot * 1.5);
+                pot = await Math.round(pot * 1.5);
+                embed.addField("Both players chose " + emoji1 + ". Pot is increased 50% <:PogO:804089420020973568>\n**Pot: **" + pot, '\u200B')
+               
             }
            
         // player2 wins
@@ -212,17 +213,17 @@ async function winnerMessage(message, winner, loser, emojiW, emojiL, w, l, pot, 
     if (multiplayer) {
         embed.addFields(
             { name: winner + " is the winner! You earn " + pot + " <:HentaiCoin:814968693981184030>", value: '\u200B'},
-            { name: "\u200B", value: winner + "  " + (w + pot) + " <:HentaiCoin:814968693981184030>      " + loser + "  " + (l - pot) + " <:HentaiCoin:814968693981184030>", value: '\u200B'}    
+            { name: "\u200B", value: winner + "  " + (w + pot) + " <:HentaiCoin:814968693981184030>      " + loser + "  " + (l - pot) + " <:HentaiCoin:814968693981184030>"}    
         )
     } else if (w == null) {
         embed.addFields(
             { name: winner + " is the winner!", value: '\u200B'},
-            { name: "\u200B",  value: loser + "  " + (l - pot) + " <:HentaiCoin:814968693981184030>", value: '\u200B'}    
+            { name: "\u200B",  value: loser + "  " + (l - pot) + " <:HentaiCoin:814968693981184030>"}    
         )
     } else if (l == null) {
         embed.addFields(
             { name: winner + " is the winner! You earn " + pot + " <:HentaiCoin:814968693981184030>", value: '\u200B'},
-            { name: "\u200B",  value: winner + "  " + (w + pot) + " <:HentaiCoin:814968693981184030>", value: '\u200B'}    
+            { name: "\u200B",  value: winner + "  " + (w + pot) + " <:HentaiCoin:814968693981184030>"}    
         )
     }
 
