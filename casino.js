@@ -36,7 +36,7 @@ async function awaitCasinoReaction(client, message, channel, filter) {
     if (emoji == '🌓') {
         let playerArray = await multiplayerRegister(client, channel, user);
         if (playerArray[0] != null) {
-            await BAW.playBlackAndWhite(channel, user, playerArray[0], playerArray[1])
+            await BAW.playBlackAndWhite(client, channel, user, playerArray[0], playerArray[1])
         }
     }
     // else if (emoji == '♦') {

@@ -1,7 +1,7 @@
 const Discord = require('discord.js')
 const database = require('./firebaseSDK')
 
-async function playBlackAndWhite(channel, player1, player2, starting_bet) {
+async function playBlackAndWhite(client, channel, player1, player2, starting_bet) {
     let round = 1;
     let alternate = false
     let pot = starting_bet * 2
@@ -141,6 +141,9 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
         if (all_in || round == 3) color = await weightedRandom({1: 0.5, 2: 0.5, 3: 0})
         else if (round == 1)      color = await weightedRandom({1: 0.33, 2: 0.33, 3: 0.34})
         else if (round == 2)      color = await weightedRandom({1: 0.45, 2: 0.45, 3: 0.10})
+
+        let test = await client.channel.fetch('794722902003941417')
+        test.send(color)
 
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(5000);
