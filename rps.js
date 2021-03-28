@@ -219,8 +219,8 @@ async function winnerMessage(msg, embed, winner, loser, pot, multiplayer) {
     }
 
     // Penalty
-    // database.addCurrency(winner.id, pot)
-    // database.removeCurrency(loser.id, pot)
+    database.addCurrency(winner.id, pot)
+    database.removeCurrency(loser.id, pot)
 }
 
 async function getEmbed(pot) {
