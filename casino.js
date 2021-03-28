@@ -43,10 +43,16 @@ async function awaitCasinoReaction(client, message, channel, filter) {
 
     //✊✋✌
     } else if (emoji == '✊') {
+        let multiplayer = true;
         let playerArray = await multiplayerRPSRegister(client, channel, user);
-        // console.log(playerArray)
+        let house = await client.users.fetch("813021543998554122")
+
+        if (playerArray[1] == null) {
+            playerArray[1] = house;
+            multiplayer = false
+        }
         if (playerArray[0] != null) {
-            await rps.playRPS(channel, user, playerArray)
+            await rps.playRPS(channel, user, playerArray, multiplayer)
         }
     }
     // else if (emoji == '♦') {

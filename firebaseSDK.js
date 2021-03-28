@@ -12,6 +12,8 @@ async function getTopWallets() {
     let walletmap = new Map();
 
     wallets.docs.map(doc => {
+      //King wavy
+      if(doc.data().userID != '813021543998554122')
         walletmap.set(doc.data().userID, doc.data().currency);
     })
 

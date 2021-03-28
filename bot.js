@@ -9,7 +9,7 @@ const client = new Discord.Client();
 
 const database = require('./firebaseSDK')
 
-//client.login();
+//client.login('');
 client.login(process.env.BOT_TOKEN)
 
 client.on('ready', async () => {
