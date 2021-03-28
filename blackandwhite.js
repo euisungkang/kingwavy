@@ -104,6 +104,13 @@ async function playBlackAndWhite(client, channel, player1, player2, starting_bet
 
         raise = false;
         game.edit(embed)
+
+        let color;
+        if (all_in || round == 3) color = await weightedRandom({1: 0.5, 2: 0.5, 3: 0})
+        else if (round == 1)      color = await weightedRandom({1: 0.33, 2: 0.33, 3: 0.34})
+        else if (round == 2)      color = await weightedRandom({1: 0.45, 2: 0.45, 3: 0.10})
+
+        console.log(color);
         
         let filter = (reaction, user) => ((reaction.emoji.id == '825059935662243882' || reaction.emoji.id == '825059935951126548')
                                      && user.id == lowest.player.id) || (reaction.emoji.name == '❌' && (user.id == player1.id || user.id == player2.id))
@@ -137,13 +144,7 @@ async function playBlackAndWhite(client, channel, player1, player2, starting_bet
         game.edit(embed)
 
         // 1 = Black, 2 = White, 3 = Gray
-        let color;
-        if (all_in || round == 3) color = await weightedRandom({1: 0.5, 2: 0.5, 3: 0})
-        else if (round == 1)      color = await weightedRandom({1: 0.33, 2: 0.33, 3: 0.34})
-        else if (round == 2)      color = await weightedRandom({1: 0.45, 2: 0.45, 3: 0.10})
 
-        let test = await client.channels.fetch('794722902003941417')
-        test.send(color)
 
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(5000);
