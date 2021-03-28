@@ -52,7 +52,7 @@ async function awaitCasinoReaction(client, message, channel, filter) {
             multiplayer = false
         }
         if (playerArray[0] != null) {
-            await rps.playRPS(channel, user, playerArray, multiplayer)
+            await rps.playRPS(client, channel, user, playerArray, multiplayer)
         }
     }
     // else if (emoji == '♦') {

@@ -1,7 +1,8 @@
 const Discord = require('discord.js')
 const database = require('./firebaseSDK')
 
-async function playRPS(channel, player1, players, multiplayer) {
+async function playRPS(client, channel, player1, players, multiplayer) {
+    let log = client.channels.fetch('825839129996296232').catch(err => {console.log(err)})
     let draw = false;
     let lowest_wallet = [];
     let firstRound = true;
@@ -194,6 +195,7 @@ async function playRPS(channel, player1, players, multiplayer) {
     const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
     await wait(7000);
 
+    log.send(embed)
     game.delete()
 }
 
