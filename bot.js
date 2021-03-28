@@ -9,7 +9,7 @@ const client = new Discord.Client();
 
 const database = require('./firebaseSDK')
 
-//client.login('');
+//client.login();
 client.login(process.env.BOT_TOKEN)
 
 client.on('ready', async () => {
@@ -76,22 +76,26 @@ async function marketUpdate(channel) {
     market.awaitMarketReaction(msg, channel, filter)
 }
 
-let csnID = '824874877261316106'
-let csnID2 = '825495953438933102'
+let csnID = '825564278584639528'
+let csnID2 = '825564283588837386'
 
 async function casinoUpdate(channel, channel2) {
     let msg = await casino.updateCasino(channel, csnID);
     let msg2 = await casino.updateCasino(channel2, csnID2)
     msg.react('🌓')
+    msg.react('✊')
     msg.react('♦')
     msg.react('🃏')
+  
     msg2.react('🌓')
+    msg2.react('✊')
     msg2.react('♦')
     msg2.react('🃏')
 
+
     // const filter = (reaction, user) => (reaction.emoji.name == '🌓' || reaction.emoji.name == '♦') && user.id != msg.author.id
-    const filter = (reaction, user) => (reaction.emoji.name == '🌓') && user.id != msg.author.id
-    const filter2 = (reaction, user) => (reaction.emoji.name == '🌓') && user.id != msg2.author.id
+    const filter = (reaction, user) => (reaction.emoji.name == '🌓' || reaction.emoji.name == '✊') && user.id != msg.author.id
+    const filter2 = (reaction, user) => (reaction.emoji.name == '🌓' || reaction.emoji.name == '✊') && user.id != msg2.author.id
     casino.awaitCasinoReaction(client, msg, channel, filter)
     casino.awaitCasinoReaction(client, msg2, channel2, filter2)
 }

@@ -1,8 +1,10 @@
 const Discord = require('discord.js');
 const BAW = require('./blackandwhite')
 const BJ = require('./blackjack')
+const rps = require('./rps')
 
 async function updateCasino(channel, csnID) {
+    //await channel.send("", {files: ['https://i.ibb.co/N1f9Qwg/casino.png']})
     let embed = await getEmbed();
 
     let exists = true;
@@ -34,9 +36,17 @@ async function awaitCasinoReaction(client, message, channel, filter) {
 
     //Play Game
     if (emoji == '🌓') {
-        let playerArray = await multiplayerRegister(client, channel, user);
+        let playerArray = await multiplayerBAWRegister(client, channel, user);
         if (playerArray[0] != null) {
             await BAW.playBlackAndWhite(client, channel, user, playerArray[0], playerArray[1])
+        }
+
+    //✊✋✌
+    } else if (emoji == '✊') {
+        let playerArray = await multiplayerRPSRegister(client, channel, user);
+        // console.log(playerArray)
+        if (playerArray[0] != null) {
+            await rps.playRPS(channel, user, playerArray)
         }
     }
     // else if (emoji == '♦') {
@@ -49,7 +59,7 @@ async function awaitCasinoReaction(client, message, channel, filter) {
     awaitCasinoReaction(client, message, channel, filter)
 }
 
-async function multiplayerRegister(client, channel, player1) {
+async function multiplayerBAWRegister(client, channel, player1) {
     let toreturn = []
 
     let multiplayer = await channel.send("<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)")
@@ -144,6 +154,120 @@ async function multiplayerRegister(client, channel, player1) {
     return toreturn;
 }
 
+async function multiplayerRPSRegister(client, channel, player1) {
+    let toreturn = []
+    let todelete = []
+    let player2 = null;
+
+    let multiplayer = await channel.send("<@" + player1.id + "> Do you wish to play against a player, or the house? (p or h)")
+    todelete.push(multiplayer)
+
+    let filter = (m) => m.author.id == player1.id;
+
+    // If player1 doesn't respond to player1 prompt
+    let collected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+        multiplayer.delete()
+        return null;
+    })
+    if (collected == null) {
+        toreturn[0] = null
+        return toreturn
+    }
+    todelete.push(await channel.messages.fetch(collected.first().id))
+
+    let multiplayerDecision = (collected.first().content)
+    if (multiplayerDecision == 'p') {
+        let playerPrompt = await channel.send("<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)")
+        todelete.push(playerPrompt)
+        
+        let playerCollected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+            channel.bulkDelete(todelete);
+            return null;
+        })
+        if (playerCollected == null) {
+            toreturn[0] = null
+            return toreturn
+        }
+        todelete.push(await channel.messages.fetch(playerCollected.first().id))
+
+        let player2ID = (playerCollected.first().content).match(/(\d+)/)
+
+        if (player2ID == null) {
+            let errMSG = await channel.send("Please enter a valid player :unamused:")
+            todelete.push(errMSG);
+            const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+            await wait(3000);
+
+            channel.bulkDelete(todelete)
+    
+            toreturn[0] = null
+            return toreturn;
+        }
+
+        player2 = await client.users.fetch(player2ID[0]).catch(async err => {
+            let errMSG = await channel.send("Please enter a valid player :unamused:")
+            todelete.push(errMSG)
+            const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+            await wait(3000);
+    
+            channel.bulkDelete(todelete)
+            
+            return null;
+        })
+        if (player2 == null) {
+            toreturn[0] = null
+            return toreturn
+        }
+
+        sendConfirmation(player2, player1, "Rock Paper Scissors")
+
+    } else if (multiplayerDecision == 'h') {
+        // Poggers
+    } else {
+        let errMSG = await channel.send("Please enter either p or h")
+        todelete.push(errMSG)
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(3000);
+        channel.bulkDelete(todelete)
+
+        toreturn[0] = null
+        return toreturn
+    } 
+    
+    // Starting bet and confirmations
+    let starting_bet = await channel.send("<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)")
+    todelete.push(starting_bet)
+
+    let collected2 = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+        channel.bulkDelete(todelete)
+        return null
+    })
+    if (collected2 == null) {
+        toreturn[0] = null
+        return toreturn
+    }
+    todelete.push(await channel.messages.fetch(collected2.first().id))
+
+    let stb = collected2.first().content;
+
+    if (isNaN(stb) || stb < 1 || stb > 30) {
+        let errMSG = await channel.send("Please enter a valid number <:PikaO:804086658000748584>")
+        todelete.push(errMSG)
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(3000);
+
+        channel.bulkDelete(todelete)
+        
+        toreturn[0] = null
+        return toreturn;
+    }
+
+    channel.bulkDelete(todelete)
+    toreturn.push(stb)
+    toreturn.push(player2)
+    return toreturn;
+}
+
 async function multiplayerBlackjackRegister(client, channel, player1) {
     let toreturn = []
     toreturn[0] = player1
@@ -214,7 +338,7 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
             multiplayer.delete()
             channel.bulkDelete(msgArray)
         })
-        console.log(collected2)
+        //console.log(collected2)
         msgArray.push(collected2)
 
         toreturn[i + 1] = playerArray[i]
@@ -263,6 +387,7 @@ async function getEmbed() {
 	.setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
 	.addFields(
         { name: "Black and White: 🌓", value: '```yaml\nOnline, with penalty\n```' },
+        { name: "Rock Paper Scissors: ✊", value: '```yaml\nOnline, without penalty\n```' },
         { name: "Blackjack: ♦", value: '```diff\n-Offline\n```'},
         { name: "Poker: 🃏", value: '```diff\n-Offline\n```'}
     )
