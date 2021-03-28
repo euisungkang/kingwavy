@@ -14,7 +14,7 @@ async function playRPS(client, channel, player1, players, multiplayer) {
     let stb = players[0]
     let pot = players[0]
     if (multiplayer)        pot = pot * 2
-    else                    pot = pot * 1.5
+    else                    pot = Math.round(pot * 1.5)
 
     let wallet1 = await database.getCurrency(player1.id)
     let wallet2 = await database.getCurrency(player2.id)
