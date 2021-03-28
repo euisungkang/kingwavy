@@ -216,7 +216,7 @@ async function winnerMessage(msg, log, embed, winner, loser, pot, multiplayer) {
         p1.delete()
         p2.delete()
     }
-    log.send(winner.username + "  " + w + "      " + loser.username + "  " + l + "\nPot: " + pot)
+    log.send(winner.username + "  " + (w + pot) + "      " + loser.username + "  " + (l - pot) + "\nPot: " + pot)
     // Penalty
     // database.addCurrency(winner.id, pot)
     // database.removeCurrency(loser.id, pot)
