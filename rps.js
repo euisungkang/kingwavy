@@ -218,8 +218,8 @@ async function winnerMessage(msg, log, embed, winner, loser, pot, multiplayer) {
     }
     log.send(winner.username + "  " + (w + pot) + "      " + loser.username + "  " + (l - pot) + "\nPot: " + pot)
     // Penalty
-    database.addCurrency(winner, pot)
-    database.removeCurrency(loser, pot)
+    await database.addCurrency(winner, pot)
+    await database.removeCurrency(loser, pot)
 }
 
 async function getEmbed(pot) {
