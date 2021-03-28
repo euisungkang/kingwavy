@@ -178,16 +178,16 @@ async function playRPS(channel, player1, players, multiplayer) {
                 (emoji1 == '✌' && emoji2 == '✋') ||
                 (emoji1 == '✊' && emoji2 == '✌')) {
             //embed.addField( "\u200B", "**" + player1.username + "** has chosen " + emoji1 + "  \n**" + player2.username + "** has chosen " + emoji2)
-            if (multiplayer) winnerMessage(game, embed, player1, player2, pot / 2)
-            else             winnerMessage(game, embed, player1, player2, pot - stb)
+            if (multiplayer) winnerMessage(game, embed, player1, player2, pot / 2, multiplayer)
+            else             winnerMessage(game, embed, player1, player2, pot - stb, multiplayer)
         }
         // player2 wins
         else if ((emoji1 == '✊' && emoji2 == '✋') ||
                 (emoji1 == '✋' && emoji2 == '✌') ||
                 (emoji1 == '✌' && emoji2 == '✊')) {
             //embed.addField( "\u200B", "**" + player2.username + "** has chosen " + emoji2 + "  \n**" + player1.username + "** has chosen " + emoji1)
-            if (multiplayer) winnerMessage(game, embed, player2, player1, pot / 2)
-            else             winnerMessage(game, embed, player2, player1, stb)
+            if (multiplayer) winnerMessage(game, embed, player2, player1, pot / 2, multiplayer)
+            else             winnerMessage(game, embed, player2, player1, stb, multiplayer)
         }
     } while(draw)
 
@@ -205,16 +205,18 @@ async function winnerMessage(msg, embed, winner, loser, pot) {
         { name: winner.username + " is the winner!   " + winner.username + " earns " + pot + " <:HentaiCoin:814968693981184030>", value: '\u200B'},
         { name: "\u200B", value: winner.username + "  " + (w + pot) + " <:HentaiCoin:814968693981184030>       " + loser.username + "  " + (l - pot) + " <:HentaiCoin:814968693981184030>"})
 
-    p1 = await winner.send(embed); 
-    p2 = await loser.send(embed); 
-    
     msg.edit(embed)
+    
+    if (multiplayer) {
+        p1 = await winner.send(embed); 
+        p2 = await loser.send(embed); 
+    
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(7000);
 
-    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
-    await wait(7000);
-
-    p1.delete()
-    p2.delete()
+        p1.delete()
+        p2.delete()
+    }
 
     // Penalty
     // database.addCurrency(winner.id, pot)
