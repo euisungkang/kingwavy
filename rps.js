@@ -207,11 +207,16 @@ async function playRPS(client, channel, player1, players, multiplayer) {
 }
 
 async function bugCheck(wallet1, wallet2, player1, player2) {
-    console.log(player1.username + "  " + player2.username + "   bug   " + wallet1 + "          " + wallet2)
+
     let bugCheck1 = await database.getCurrency(player1.id)
     let bugCheck2 = await database.getCurrency(player2.id)
 
-    return (bugCheck1 != wallet1 || bugCheck2 != wallet2)
+    let c = (bugCheck1 != wallet1 || bugCheck2 != wallet2)
+    if (c) {
+        console.log(player1.username + "  " + player2.username + "   bug   " + wallet1 + "          " + wallet2)
+    }
+
+    return c
 }
 
 async function winnerMessage(msg, log, embed, winner, loser, w, l, pot, multiplayer) {
