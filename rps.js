@@ -9,15 +9,18 @@ async function playRPS(client, channel, player1, players, multiplayer) {
 
     let finalMessages = []
 
-    
     let player2 = players[1]
     let stb = players[0]
     let pot = players[0]
     if (multiplayer)        pot = pot * 2
-    else                    pot = Math.round(pot * 1.5)
+    else                    pot = Math.floor(pot * 1.5)
 
     let wallet1 = await database.getCurrency(player1.id)
     let wallet2 = await database.getCurrency(player2.id)
+
+    if (wallet1 < 1 || wallet2 < 1) {
+        return;
+    }
 
     let embed = await getEmbed(pot, multiplayer)
     if (multiplayer)            embed.setDescription("Choose Rock Paper, or Scissors. \nMake your selection by reacting to the emojis.\n\n**Player 2 has to click ✅ to start the game**\n\n**Pot: **" + pot)
@@ -87,9 +90,17 @@ async function playRPS(client, channel, player1, players, multiplayer) {
 
     let p1; let p2; let filter; let returnArray;
     do {
+        if (await bugCheck(wallet1, wallet2, player1, player2))        break;
+
         //Check for all in
-        if (lowest_wallet[1] <= pot / 2) {
+        if (multiplayer && lowest_wallet[1] <= pot / 2) {
             pot = lowest_wallet[1] * 2
+            all_in = true;
+
+            embed.addField(lowest_wallet[0].username + " HAS ALL INNED", "The pot total is now **" + pot + "** <:HentaiCoin:814968693981184030>\n\n**The pot total won't be increased any further**")
+        } else if (!multiplayer && lowest_wallet[1] <= stb) {
+            pot = lowest_wallet[1] * 2
+            stb = lowest_wallet[1]
             all_in = true;
 
             embed.addField(lowest_wallet[0].username + " HAS ALL INNED", "The pot total is now **" + pot + "** <:HentaiCoin:814968693981184030>\n\n**The pot total won't be increased any further**")
@@ -120,7 +131,7 @@ async function playRPS(client, channel, player1, players, multiplayer) {
                 console.log("Player2 didnt show up")
                 return null
             });
-
+            
             let promiseArray = await Promise.all([collected, collected2]).then((values) => { return values })
 
             if (promiseArray[0] == null || promiseArray[1] == null) break;
@@ -152,8 +163,7 @@ async function playRPS(client, channel, player1, players, multiplayer) {
         embed.addFields(
             {name:'\u200B', value:"**" + player1.username + "** has chosen **" + emoji1 + "**\n**" + player2.username + "** has chosen **" + emoji2 + "**"},
         )
-        // console.log(emoji1)
-        // console.log(emoji2)
+        if (await bugCheck(wallet1, wallet2, player1, player2))        break;
 
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(4000);
@@ -163,12 +173,12 @@ async function playRPS(client, channel, player1, players, multiplayer) {
         if (emoji1 == emoji2) {
             draw = true;
             if (all_in) {
-                embed.addField("Draw. Pot won't be increased due to an all in by" + lowest[0].username + "\n\n**Pot: **" + pot, '\u200B')
+                embed.addField("Draw. Pot won't be increased due to an all in by " + lowest_wallet[0].username + "\n\n**Pot: **" + pot, '\u200B')
             } else if (multiplayer) {
                 pot = pot * 2;
                 embed.addField("Draw. Pot is doubled <:PogO:804089420020973568>\n\n**Pot: **" + pot, '\u200B')
             } else {
-                pot = await Math.round(pot * 1.5);
+                pot = await Math.floor(pot * 1.5);
                 embed.addField("Draw. Pot is increased 50% <:PogO:804089420020973568>\n\n**Pot: **" + pot, '\u200B')
             }
         }
@@ -177,16 +187,16 @@ async function playRPS(client, channel, player1, players, multiplayer) {
                 (emoji1 == '✌' && emoji2 == '✋') ||
                 (emoji1 == '✊' && emoji2 == '✌')) {
             //embed.addField( "\u200B", "**" + player1.username + "** has chosen " + emoji1 + "  \n**" + player2.username + "** has chosen " + emoji2)
-            if (multiplayer) winnerMessage(game, log, embed, player1, player2, pot / 2, multiplayer)
-            else             winnerMessage(game, log, embed, player1, player2, pot - stb, multiplayer)
+            if (multiplayer) winnerMessage(game, log, embed, player1, player2, wallet1, wallet2, pot / 2, multiplayer)
+            else             winnerMessage(game, log, embed, player1, player2, wallet1, wallet2, pot - stb, multiplayer)
         }
         // player2 wins
         else if ((emoji1 == '✊' && emoji2 == '✋') ||
                 (emoji1 == '✋' && emoji2 == '✌') ||
                 (emoji1 == '✌' && emoji2 == '✊')) {
             //embed.addField( "\u200B", "**" + player2.username + "** has chosen " + emoji2 + "  \n**" + player1.username + "** has chosen " + emoji1)
-            if (multiplayer) winnerMessage(game, log, embed, player2, player1, pot / 2, multiplayer)
-            else             winnerMessage(game, log, embed, player2, player1, stb, multiplayer)
+            if (multiplayer) winnerMessage(game, log, embed, player2, player1, wallet2, wallet1, pot / 2, multiplayer)
+            else             winnerMessage(game, log, embed, player2, player1, wallet2, wallet1, stb, multiplayer)
         }
     } while(draw)
 
@@ -196,10 +206,15 @@ async function playRPS(client, channel, player1, players, multiplayer) {
     game.delete()
 }
 
-async function winnerMessage(msg, log, embed, winner, loser, pot, multiplayer) {
-    let w = await database.getCurrency(winner.id)
-    let l = await database.getCurrency(loser.id)
+async function bugCheck(wallet1, wallet2, player1, player2) {
+    console.log(player1.username + "  " + player2.username + "   bug   " + wallet1 + "          " + wallet2)
+    let bugCheck1 = await database.getCurrency(player1.id)
+    let bugCheck2 = await database.getCurrency(player2.id)
 
+    return (bugCheck1 != wallet1 || bugCheck2 != wallet2)
+}
+
+async function winnerMessage(msg, log, embed, winner, loser, w, l, pot, multiplayer) {
     embed.addFields(
         { name: winner.username + " is the winner!   " + winner.username + " earns " + pot + " <:HentaiCoin:814968693981184030>", value: '\u200B'},
         { name: "\u200B", value: winner.username + "  " + (w + pot) + " <:HentaiCoin:814968693981184030>       " + loser.username + "  " + (l - pot) + " <:HentaiCoin:814968693981184030>"})
@@ -208,7 +223,7 @@ async function winnerMessage(msg, log, embed, winner, loser, pot, multiplayer) {
     
     if (multiplayer) {
         p1 = await winner.send(embed); 
-        p2 = await loser.send(embed); 
+        p2 = await loser.send(embed);   
     
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(5000);
@@ -219,7 +234,7 @@ async function winnerMessage(msg, log, embed, winner, loser, pot, multiplayer) {
     log.send(winner.username + "  " + (w + pot) + "      " + loser.username + "  " + (l - pot) + "\nPot: " + pot)
     // Penalty
     await database.addCurrency(winner, pot)
-    await database.removeCurrency(loser, pot)
+    await database.removeCurrency(loser, pot);
 }
 
 async function getEmbed(pot) {

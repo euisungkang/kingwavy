@@ -11,6 +11,8 @@ async function playBlackAndWhite(client, channel, player1, player2, starting_bet
     let wallet1 = await database.getCurrency(player1.id)
     let wallet2 = await database.getCurrency(player2.id)
 
+    if (wallet1 == 0 || wallet2 == 0) return;
+
  
     let embed = await new Discord.MessageEmbed()
     .setTitle("Black and White")
@@ -94,6 +96,7 @@ async function playBlackAndWhite(client, channel, player1, player2, starting_bet
     game.react('<:White:825059935951126548>')
 
     do {
+        if (await bugCheck(wallet1, wallet2, player1, player2))        break;
         //Check if someone starts with an all in
         if (lowest_wallet[1] <= pot / 2) {
             pot = lowest_wallet[1] * 2
@@ -115,6 +118,7 @@ async function playBlackAndWhite(client, channel, player1, player2, starting_bet
         })
         if (collected == null) break;
 
+        if (await bugCheck(wallet1, wallet2, player1, player2))        break;   
 
         let emoji = collected.first().emoji.name
 
@@ -190,6 +194,14 @@ async function playBlackAndWhite(client, channel, player1, player2, starting_bet
     await wait(7000);
 
     game.delete()
+}
+
+async function bugCheck(wallet1, wallet2, player1, player2) {
+    console.log(player1.username + "  " + player2.username + "   bug   " + wallet1 + "          " + wallet2)
+    let bugCheck1 = await database.getCurrency(player1.id)
+    let bugCheck2 = await database.getCurrency(player2.id)
+
+    return (bugCheck1 != wallet1 || bugCheck2 != wallet2)
 }
 
 async function winnerMessage(embed, winner, loser, pot) {
