@@ -59,11 +59,11 @@ async function addCurrency(user, amount) {
   console.log("ID: " + id + "    name:" + name + "    amount: " + amount);
 
   let userDB = db.collection('wallets').doc(id);
-  let aggregate_amount = amount;
+  let aggregate_amount;
 
   const doc = await userDB.get();
   if (doc.exists) {
-      aggregate_amount += doc.data().currency;
+      aggregate_amount = doc.data().currency + amount;
       console.log(doc.data());
   }
 
