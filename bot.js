@@ -6,7 +6,6 @@ const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
 const client = new Discord.Client();
-
 const database = require('./firebaseSDK')
 
 //client.login('');
@@ -100,21 +99,21 @@ async function casinoUpdate(channel, channel2) {
     casino.awaitCasinoReaction(client, msg2, channel2, filter2)
 }
 
-// client.on('message', message => {
-//     if (message.channel.id = process.env.INPUT_CHANNEL) {
+client.on('message', message => {
+    if (message.channel.id = '794722902003941417') {
 
-//         //console.log(message.channel.id + "      " + message)
-//         //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
+        //console.log(message.channel.id + "      " + message)
+        //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
 
-//         if (message.content == '$porn') {
-//             postVideo();
-//         }
-//     }
-// });
+        if (message.content == '$porn') {
+            postVideo();
+        }
+    }
+});
 
 //Call function to post video on given channelID
 async function postVideo () {
-    let Searcher = new Pornsearch('');
+    let Searcher = new Pornsearch('hentai');
 
     Searcher.videos().
     then(videos => {
@@ -123,19 +122,16 @@ async function postVideo () {
         let video = videos[video_number]
 
         Meta.parser(video.url, async (err, result) => {
-            //Get output channel and data of video
+
             let output_channel = await client.channels.fetch('813223964997451788');
             let metadata = await result.og
 
             console.log(metadata)
 
-
             let thumbnail = metadata.image
-
 
             //Sending description and image
             output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url, {files: [thumbnail]});
         })
     });
 }
-
