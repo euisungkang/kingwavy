@@ -100,14 +100,11 @@ async function casinoUpdate(channel, channel2) {
 }
 
 client.on('message', message => {
-    if (message.channel.id = '794722902003941417') {
+    //console.log(message.channel.id + "      " + message)
+    //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
 
-        //console.log(message.channel.id + "      " + message)
-        //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
-
-        if (message.content == '$porn') {
-            postVideo();
-        }
+    if (message.content == '$porn') {
+        postVideo();
     }
 });
 
