@@ -5,8 +5,10 @@ const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
+const { HAnimeAPI } = require('hanime');
 const client = new Discord.Client();
 const database = require('./firebaseSDK')
+const HAPI = new HAnimeAPI();
 
 //client.login('');
 client.login(process.env.BOT_TOKEN)
@@ -110,25 +112,25 @@ client.on('message', message => {
 
 //Call function to post video on given channelID
 async function postVideo () {
-    let Searcher = new Pornsearch('hentai');
+    const results = await HAPI.search('', {blacklist: ["scat", "loli", "bestiality", "pregnant", "shota",  "tentacle", "ugly bastard"]});
 
-    Searcher.videos().
-    then(videos => {
-        let total_videos = videos.length - 1
-        let video_number = Math.round(Math.random() * (total_videos - 1) + 1)
-        let video = videos[video_number]
+    const arraySize = results.videos.length;
+    const randomVideoIndex = Math.floor(Math.random() * (arraySize - 1))
+    const randomVideo = await HAPI.get_video(results.videos[randomVideoIndex])
+    
+    let name = randomVideo.video.hentai_video.name
+    let thumbnail = randomVideo.video.hentai_video.poster_url;
+    let description = randomVideo.video.hentai_video.description
 
-        Meta.parser(video.url, async (err, result) => {
+    let rawTags = randomVideo.tags;
+    let tags = new Array();
+    //console.log((rawTags)[0])
+    for (let i = 0; i < rawTags.length; i++) {
+        tags[i] = " " + (rawTags)[i].text
+    }
 
-            let output_channel = await client.channels.fetch('813223964997451788');
-            let metadata = await result.og
+    let output_channel = await client.channels.fetch('813223964997451788');
 
-            console.log(metadata)
-
-            let thumbnail = metadata.image
-
-            //Sending description and image
-            output_channel.send('\n**' + metadata.title + '**\n```JSON\n"' + metadata.description + '"\n```\n**Video URL:** ' + video.url, {files: [thumbnail]});
-        })
-    });
+    //Sending description and image
+    output_channel.send('\n**' + name + '**\n```JSON\n"' + description + "\n\nTags: " + tags + '"\n```\n**Video URL:** ' + randomVideo.video_url, {files: [thumbnail]});
 }
