@@ -105,7 +105,7 @@ client.on('message', message => {
     //console.log(message.channel.id + "      " + message)
     //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
 
-    if (message.content == '$porn') {
+    if (message.content == '$porn' && message.author.id == '237018129664966656') {
         postVideo();
     }
 });
