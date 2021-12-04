@@ -10,8 +10,8 @@ const client = new Discord.Client();
 const database = require('./firebaseSDK')
 const HAPI = new HentaiHavenAPI();
 
-client.login('ODEzMDIxNTQzOTk4NTU0MTIy.YDJPUQ.HXF3vdASX5vgR__-GkWDQBKUvxM');
-// client.login(process.env.BOT_TOKEN)
+
+client.login(process.env.BOT_TOKEN)
 
 client.on('ready', async () => {
     console.log("help pls")
