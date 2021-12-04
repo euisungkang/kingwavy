@@ -5,13 +5,13 @@ const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const Pornsearch = require('pornsearch');
-const { HAnimeAPI } = require('hanime');
+const { HentaiHavenAPI } = require('hentaihaven');
 const client = new Discord.Client();
 const database = require('./firebaseSDK')
-const HAPI = new HAnimeAPI();
+const HAPI = new HentaiHavenAPI();
 
-//client.login('');
-client.login(process.env.BOT_TOKEN)
+client.login('ODEzMDIxNTQzOTk4NTU0MTIy.YDJPUQ.HXF3vdASX5vgR__-GkWDQBKUvxM');
+// client.login(process.env.BOT_TOKEN)
 
 client.on('ready', async () => {
     console.log("help pls")
@@ -32,18 +32,44 @@ client.on('ready', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel);
 
+    votingSystem()
+
 });
 
-cron.schedule('00 5 * * *', () => {
-    console.log('Running cron');
-    postVideo();
-})
+// cron.schedule('00 5 * * *', () => {
+//     console.log('Running cron');
+//     postVideo();
+// })
 
 cron.schedule('00 * * * *', async () => {
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel)
 })
+
+async function votingSystem() {
+    let vc = await client.channels.fetch('888391559442223205')
+    let m = await vc.messages.fetch('888397457975808060')
+    let e = await new Discord.MessageEmbed()
+    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Banner Vote")
+    .setDescription("React with the emoji corresponding to whichever banner you like. "
+                +   "You can vote for multiple banners. The banner with the most votes will be uploaded to 【 𝓦 𝓪 𝓿 𝔂 】. \n\n"
+                +   "Emojis correspond to each image from **top to down**\n")
+    .setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
+    .addFields(
+        { name: '\u200B', value: '\u200B' },
+        { name: '1     🔥', value: '\u200B'},
+        { name: '2     ☕', value: '\u200B'},
+        { name: '3     🎇', value: '\u200B'},
+        { name: '4     🙏', value: '\u200B'},
+    )
+
+    m.react('🔥')
+    m.react('☕')
+    m.react('🎇')
+    m.react('🙏')
+    m.edit(e)
+}
 
 let ldbID = '824439874022539305'
 
@@ -105,18 +131,20 @@ client.on('message', message => {
     //console.log(message.channel.id + "      " + message)
     //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
 
-    if (message.content == '$porn' && message.author.id == '237018129664966656') {
-        postVideo();
-    }
+    // if (message.content == '$porn' && message.author.id == '237018129664966656') {
+    //     postVideo();
+    // }
 });
 
 //Call function to post video on given channelID
 async function postVideo () {
-    const results = await HAPI.search('', {blacklist: ["scat", "loli", "bestiality", "pregnant", "shota",  "tentacle", "ugly bastard"]});
+    //const results = await HAPI.search('', {blacklist: ["scat", "loli", "bestiality", "pregnant", "shota",  "tentacle", "ugly bastard"]});
+    const results = await HAPI.search('query')
 
     const arraySize = results.videos.length;
     const randomVideoIndex = Math.floor(Math.random() * (arraySize - 1))
-    const randomVideo = await HAPI.get_video(results.videos[randomVideoIndex])
+    console.log(results.videos[0])
+    const randomVideo = await HAPI.get_video(results.videos[0])
     
     let name = randomVideo.video.hentai_video.name
     let thumbnail = randomVideo.video.hentai_video.poster_url;
