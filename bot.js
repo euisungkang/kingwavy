@@ -10,7 +10,6 @@ const client = new Discord.Client();
 const database = require('./firebaseSDK')
 const HAPI = new HentaiHavenAPI();
 
-
 client.login(process.env.BOT_TOKEN)
 
 client.on('ready', async () => {
@@ -32,8 +31,7 @@ client.on('ready', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel);
 
-    votingSystem()
-
+    //votingSystem()
 });
 
 // cron.schedule('00 5 * * *', () => {
@@ -46,33 +44,50 @@ cron.schedule('00 * * * *', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel)
 })
-
+//https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes
 async function votingSystem() {
-    let vc = await client.channels.fetch('888391559442223205')
-    let m = await vc.messages.fetch('888397457975808060')
+    let vc = await client.channels.fetch('917676729487749140')
+    let m = await vc.messages.fetch('917677585209630750')
     let e = await new Discord.MessageEmbed()
-    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Banner Vote")
-    .setDescription("React with the emoji corresponding to whichever banner you like. "
-                +   "You can vote for multiple banners. The banner with the most votes will be uploaded to 【 𝓦 𝓪 𝓿 𝔂 】. \n\n"
-                +   "Emojis correspond to each image from **top to down**\n")
+    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Minecraft Server v2: Starting Biome")
+    .setDescription("Due to sufficient demand, we will be restarting the 【 𝓦 𝓪 𝓿 𝔂 】 Minecraft server. "
+                +   "This vote will decide which biome the spawning point will be set at. \n\n"
+                +   "The link below lists all the available biomes.\n"
+                +   "> https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes\n\n"
+                +   "**You can vote for as many biomes as you want**")
     .setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
     .addFields(
         { name: '\u200B', value: '\u200B' },
-        { name: '1     🔥', value: '\u200B'},
-        { name: '2     ☕', value: '\u200B'},
-        { name: '3     🎇', value: '\u200B'},
-        { name: '4     🙏', value: '\u200B'},
+        { name: 'Plains     🌿', value: '\u200B'},
+        { name: 'Forest     🌳', value: '\u200B'},
+        { name: 'Jungle     🐵', value: '\u200B'},
+        { name: 'Mountain     ⛰️', value: '\u200B'},
+        { name: 'Desert     ☀️', value: '\u200B'},
+        { name: 'Taiga     🐯', value: '\u200B'},
+        { name: 'Snowy Tundra     ❄️', value: '\u200B'},
+        { name: 'Swamp     💩', value: '\u200B'},
+        { name: 'Savannah     🦙', value: '\u200B'},
+        { name: 'Badlands     🍂', value: '\u200B'},
+        { name: 'Ocean     🌊', value: '\u200B'},
+        { name: 'Nether     🔥', value: '\u200B'},
     )
 
+    m.react('🌿')
+    m.react('🌳')
+    m.react('🐵')
+    m.react('⛰️')
+    m.react('☀️')
+    m.react('🐯')
+    m.react('❄️')
+    m.react('💩')
+    m.react('🦙')
+    m.react('🍂')
+    m.react('🌊')
     m.react('🔥')
-    m.react('☕')
-    m.react('🎇')
-    m.react('🙏')
     m.edit(e)
 }
 
 let ldbID = '824439874022539305'
-
 
 async function leaderboardUpdate(channel) {
     console.log("updating ldb");
