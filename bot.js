@@ -4,11 +4,8 @@ const market = require('./market')
 const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
-const Pornsearch = require('pornsearch');
-const { HentaiHavenAPI } = require('hentaihaven');
 const client = new Discord.Client();
 const database = require('./firebaseSDK')
-const HAPI = new HentaiHavenAPI();
 
 client.login(process.env.BOT_TOKEN)
 
@@ -152,28 +149,28 @@ client.on('message', message => {
 });
 
 //Call function to post video on given channelID
-async function postVideo () {
-    //const results = await HAPI.search('', {blacklist: ["scat", "loli", "bestiality", "pregnant", "shota",  "tentacle", "ugly bastard"]});
-    const results = await HAPI.search('query')
+// async function postVideo () {
+//     //const results = await HAPI.search('', {blacklist: ["scat", "loli", "bestiality", "pregnant", "shota",  "tentacle", "ugly bastard"]});
+//     const results = await HAPI.search('query')
 
-    const arraySize = results.videos.length;
-    const randomVideoIndex = Math.floor(Math.random() * (arraySize - 1))
-    console.log(results.videos[0])
-    const randomVideo = await HAPI.get_video(results.videos[0])
+//     const arraySize = results.videos.length;
+//     const randomVideoIndex = Math.floor(Math.random() * (arraySize - 1))
+//     console.log(results.videos[0])
+//     const randomVideo = await HAPI.get_video(results.videos[0])
     
-    let name = randomVideo.video.hentai_video.name
-    let thumbnail = randomVideo.video.hentai_video.poster_url;
-    let description = randomVideo.video.hentai_video.description
+//     let name = randomVideo.video.hentai_video.name
+//     let thumbnail = randomVideo.video.hentai_video.poster_url;
+//     let description = randomVideo.video.hentai_video.description
 
-    let rawTags = randomVideo.tags;
-    let tags = new Array();
-    //console.log((rawTags)[0])
-    for (let i = 0; i < rawTags.length; i++) {
-        tags[i] = " " + (rawTags)[i].text
-    }
+//     let rawTags = randomVideo.tags;
+//     let tags = new Array();
+//     //console.log((rawTags)[0])
+//     for (let i = 0; i < rawTags.length; i++) {
+//         tags[i] = " " + (rawTags)[i].text
+//     }
 
-    let output_channel = await client.channels.fetch('813223964997451788');
+//     let output_channel = await client.channels.fetch('813223964997451788');
 
-    //Sending description and image
-    output_channel.send('\n**' + name + '**\n```JSON\n"' + description + "\n\nTags: " + tags + '"\n```\n**Video URL:** ' + randomVideo.video_url, {files: [thumbnail]});
-}
+//     //Sending description and image
+//     output_channel.send('\n**' + name + '**\n```JSON\n"' + description + "\n\nTags: " + tags + '"\n```\n**Video URL:** ' + randomVideo.video_url, {files: [thumbnail]});
+// }
