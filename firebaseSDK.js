@@ -14,7 +14,7 @@ async function getTopWallets() {
     wallets.docs.map(doc => {
       //King wavy
       if(doc.data().userID != '813021543998554122')
-        walletmap.set(doc.data().userID, doc.data().currency);
+        walletmap.set(doc.data().userID, doc.data().cum);
     })
 
     const sorted = await new Map([...walletmap.entries()].sort((a, b) => b[1] - a[1]));
@@ -67,7 +67,7 @@ async function addCurrency(user, amount) {
       console.log(doc.data());
   }
 
-  await userDB.set({
+  await userDB.update({
       userID: id,
       name: name,
       currency: aggregate_amount
@@ -91,7 +91,7 @@ async function removeCurrency(user, amount) {
       console.log(doc.data());
   }
 
-  await userDB.set({
+  await userDB.update({
       userID: id,
       name: name,
       currency: aggregate_amount
