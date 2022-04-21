@@ -41,6 +41,7 @@ cron.schedule('00 * * * *', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel)
 })
+
 //https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes
 async function votingSystem() {
     let vc = await client.channels.fetch('917676729487749140')
@@ -84,24 +85,42 @@ async function votingSystem() {
     m.edit(e)
 }
 
-let ldbID = '824439874022539305'
+let ldbIDCurr = '966719668117209129'
+let ldbIDBoost = '966719660525502524'
 
 async function leaderboardUpdate(channel) {
     console.log("updating ldb");
-    let ldbEmbed = await leaderboard.getEmbed(client);
 
-    let exists = true;
+    let ldbEmbed2 = await leaderboard.getEmbedBoost(client)
+    let exists = true
     try {
-        await channel.messages.fetch(ldbID)
+        await channel.messages.fetch(ldbIDBoost)
+    } catch (error) {
+        console.error(error)
+        exists = false;
+    } finally {
+        if (!exists) {
+            let msg = await channel.send(ldbEmbed2)
+            ldbIDBoost = msg.id
+        } else {
+            let msg = await channel.messages.fetch(ldbIDBoost)
+            msg.edit(ldbEmbed2);
+        }
+    }
+
+    let ldbEmbed = await leaderboard.getEmbedCurr(client);
+    exists = true;
+    try {
+        await channel.messages.fetch(ldbIDCurr)
     } catch (error) {
         console.error(error)
         exists = false;
     } finally {
         if (!exists) {
             let msg = await channel.send(ldbEmbed)
-            ldbID = msg.id
+            ldbIDCurr = msg.id
         } else {
-            let msg = await channel.messages.fetch(ldbID)
+            let msg = await channel.messages.fetch(ldbIDCurr)
             msg.edit(ldbEmbed);
         }
     }
