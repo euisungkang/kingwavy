@@ -10,7 +10,7 @@ const database = require('./firebaseSDK')
 client.login(process.env.BOT_TOKEN_KW)
 
 client.on('ready', async () => {
-    console.log("help pls")
+    console.log("help pls oh god im in heroku")
 
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
