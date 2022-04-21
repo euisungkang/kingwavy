@@ -7,7 +7,7 @@ const cron = require('node-cron');
 const client = new Discord.Client();
 const database = require('./firebaseSDK')
 
-client.login(process.env.BOT_TOKEN)
+client.login(process.env.BOT_TOKEN_KW)
 
 client.on('ready', async () => {
     console.log("help pls")

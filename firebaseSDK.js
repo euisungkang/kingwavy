@@ -1,8 +1,7 @@
 const admin = require("firebase-admin");
-const serviceAccount = require("./wavy-46a75-firebase-adminsdk-3pwsf-20426075e0.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(JSON.parse(Buffer.from(process.env.DBAuth, 'base64').toString('ascii')))
 });
 
 let db = admin.firestore();
