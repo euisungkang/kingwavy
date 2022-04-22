@@ -5,12 +5,13 @@ const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const client = new Discord.Client();
-const database = require('./firebaseSDK')
 
 client.login(process.env.BOT_TOKEN_KW)
 
 client.on('ready', async () => {
     console.log("help pls oh god im in heroku")
+
+    client.user.setActivity("$guide", { type: "LISTENING" })
 
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
@@ -31,6 +32,19 @@ client.on('ready', async () => {
     //votingSystem()
 });
 
+let prefix = '$'
+
+client.on('message', message => {
+    if (!message.content.startsWith(prefix)) return;
+
+    const args = message.content.trim().split(/ +/g);
+    const cmd = args[0].slice(prefix.length).toLowerCase();
+  
+    if (cmd == 'guide') {
+        sendGuide(message)
+    }
+});
+
 // cron.schedule('00 5 * * *', () => {
 //     console.log('Running cron');
 //     postVideo();
@@ -42,47 +56,24 @@ cron.schedule('00 * * * *', async () => {
     leaderboardUpdate(ldb_channel)
 })
 
-//https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes
-async function votingSystem() {
-    let vc = await client.channels.fetch('917676729487749140')
-    let m = await vc.messages.fetch('917677585209630750')
-    let e = await new Discord.MessageEmbed()
-    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Minecraft Server v2: Starting Biome")
-    .setDescription("Due to sufficient demand, we will be restarting the 【 𝓦 𝓪 𝓿 𝔂 】 Minecraft server. "
-                +   "This vote will decide which biome the spawning point will be set at. \n\n"
-                +   "The link below lists all the available biomes.\n"
-                +   "> https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes\n\n"
-                +   "**You can vote for as many biomes as you want**")
-    .setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
-    .addFields(
-        { name: '\u200B', value: '\u200B' },
-        { name: 'Plains     🌿', value: '\u200B'},
-        { name: 'Forest     🌳', value: '\u200B'},
-        { name: 'Jungle     🐵', value: '\u200B'},
-        { name: 'Mountain     ⛰️', value: '\u200B'},
-        { name: 'Desert     ☀️', value: '\u200B'},
-        { name: 'Taiga     🐯', value: '\u200B'},
-        { name: 'Snowy Tundra     ❄️', value: '\u200B'},
-        { name: 'Swamp     💩', value: '\u200B'},
-        { name: 'Savannah     🦙', value: '\u200B'},
-        { name: 'Badlands     🍂', value: '\u200B'},
-        { name: 'Ocean     🌊', value: '\u200B'},
-        { name: 'Nether     🔥', value: '\u200B'},
-    )
+async function sendGuide(msg) {
+    let replyChannel = await client.channels.fetch(msg.channel.id)
 
-    m.react('🌿')
-    m.react('🌳')
-    m.react('🐵')
-    m.react('⛰️')
-    m.react('☀️')
-    m.react('🐯')
-    m.react('❄️')
-    m.react('💩')
-    m.react('🦙')
-    m.react('🍂')
-    m.react('🌊')
-    m.react('🔥')
-    m.edit(e)
+    let embed = await new Discord.MessageEmbed()
+    .setColor('#ff6ad5')
+    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Guide")
+    .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
+    .addFields(
+        { name: "Currency System", value: "<#824106380222005288>: Learn About the 𝓦 𝓪 𝓿 𝔂 currency system\n\n"},
+        //{ name: '\u200B', value: '\u200B' },
+        { name: "Announcements", value: "<#813132145966186567>: Stay updated on new features and raffles"},
+        { name: "Raffles/Giveaways", value: "<#962308831944265768>: Spend coins for a chance at irl rewards"},
+        { name: "Market", value: "<#820051777650556990>: Spend coins to buy server perks and features"},
+        { name: "Casino", value: "<#825143682139029555>: Learn casino games to earn coins against others"}
+    )
+    .setFooter('Type $help for bot commands', 'https://cdn.discordapp.com/app-icons/812904867462643713/c3713856eae103c4cad96111e26bce21.png?size=512');
+
+    return await replyChannel.send(embed)
 }
 
 let ldbIDCurr = '966719668117209129'
@@ -158,14 +149,48 @@ async function casinoUpdate(channel, channel2) {
     casino.awaitCasinoReaction(client, msg2, channel2, filter2)
 }
 
-client.on('message', message => {
-    //console.log(message.channel.id + "      " + message)
-    //let output_channel = client.channels.get(process.env.GENERAL_CHANNEL);
+//https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes
+async function votingSystem() {
+    let vc = await client.channels.fetch('917676729487749140')
+    let m = await vc.messages.fetch('917677585209630750')
+    let e = await new Discord.MessageEmbed()
+    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Minecraft Server v2: Starting Biome")
+    .setDescription("Due to sufficient demand, we will be restarting the 【 𝓦 𝓪 𝓿 𝔂 】 Minecraft server. "
+                +   "This vote will decide which biome the spawning point will be set at. \n\n"
+                +   "The link below lists all the available biomes.\n"
+                +   "> https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes\n\n"
+                +   "**You can vote for as many biomes as you want**")
+    .setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
+    .addFields(
+        { name: '\u200B', value: '\u200B' },
+        { name: 'Plains     🌿', value: '\u200B'},
+        { name: 'Forest     🌳', value: '\u200B'},
+        { name: 'Jungle     🐵', value: '\u200B'},
+        { name: 'Mountain     ⛰️', value: '\u200B'},
+        { name: 'Desert     ☀️', value: '\u200B'},
+        { name: 'Taiga     🐯', value: '\u200B'},
+        { name: 'Snowy Tundra     ❄️', value: '\u200B'},
+        { name: 'Swamp     💩', value: '\u200B'},
+        { name: 'Savannah     🦙', value: '\u200B'},
+        { name: 'Badlands     🍂', value: '\u200B'},
+        { name: 'Ocean     🌊', value: '\u200B'},
+        { name: 'Nether     🔥', value: '\u200B'},
+    )
 
-    // if (message.content == '$porn' && message.author.id == '237018129664966656') {
-    //     postVideo();
-    // }
-});
+    m.react('🌿')
+    m.react('🌳')
+    m.react('🐵')
+    m.react('⛰️')
+    m.react('☀️')
+    m.react('🐯')
+    m.react('❄️')
+    m.react('💩')
+    m.react('🦙')
+    m.react('🍂')
+    m.react('🌊')
+    m.react('🔥')
+    m.edit(e)
+}
 
 //Call function to post video on given channelID
 // async function postVideo () {
