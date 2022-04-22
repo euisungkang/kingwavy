@@ -41,7 +41,7 @@ client.on('message', message => {
     const cmd = args[0].slice(prefix.length).toLowerCase();
   
     if (cmd == 'guide') {
-        sendGuide(message)
+        guideCommand(message)
     }
 });
 
@@ -56,7 +56,7 @@ cron.schedule('00 * * * *', async () => {
     leaderboardUpdate(ldb_channel)
 })
 
-async function sendGuide(msg) {
+async function guideCommand(msg) {
     let replyChannel = await client.channels.fetch(msg.channel.id)
 
     let embed = await new Discord.MessageEmbed()
@@ -71,7 +71,7 @@ async function sendGuide(msg) {
         { name: "Market", value: "<#820051777650556990>: Spend coins to buy server perks and features"},
         { name: "Casino", value: "<#825143682139029555>: Learn casino games to earn coins against others"}
     )
-    .setFooter('Type $help for bot commands', 'https://cdn.discordapp.com/app-icons/812904867462643713/c3713856eae103c4cad96111e26bce21.png?size=512');
+    .setFooter('Type ./$help <CommandName>./ for bot commands', 'https://cdn.discordapp.com/app-icons/812904867462643713/c3713856eae103c4cad96111e26bce21.png?size=512');
 
     return await replyChannel.send(embed)
 }
