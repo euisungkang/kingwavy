@@ -51,9 +51,13 @@ async function awaitMarketReaction(message, channel, filter) {
 }   
 
 async function productPurchase(user, channel) {
+    let toDelete = []
+
     let message = await channel.send("<@" + user.id + "> Which product would you like to purchase? Your balance is: "
                     +  await database.getCurrency(user.id) + " <:HentaiCoin:814968693981184030>")
     
+    toDelete.push(message)
+
     let filter = (m) => m.author.id == user.id;
 
     //What product does the user want to buy?
@@ -62,11 +66,12 @@ async function productPurchase(user, channel) {
     let response = await confirmProduct(channel, collected, user)
 
     const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
-    await wait(5000);
+    await wait(3000);
 
-    channel.messages.fetch(collected.first().id).then(m => m.delete())
-    response.delete()
-    message.delete()
+    toDelete.push(await channel.messages.fetch(collected.first().id))
+    toDelete = toDelete.concat(response)
+
+    message.channel.bulkDelete(toDelete)
 }
 
 async function confirmProduct(channel, message, user) {
@@ -110,11 +115,7 @@ async function confirmProduct(channel, message, user) {
                                 + "Your remaining balance is: " + remaining + " <:HentaiCoin:814968693981184030>")
     }
 
-    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
-    await wait(3000);
-    confirmation.delete()
-
-    return toReturn
+    return [toReturn, confirmation]
 }
 
 async function getEmbed() {
