@@ -28,7 +28,7 @@ async function getEmbedCurr(c) {
 
 	ldbEmbed
     .addField('\u200B', '\u200B')
-	.setFooter('Updated hourly');
+	.setFooter('Updated monthly');
 
     return ldbEmbed;
 }

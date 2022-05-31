@@ -3,7 +3,6 @@ const { getProducts } = require('./firebaseSDK');
 const database = require('./firebaseSDK');
 
 let mktID = '824832401996906538'
-let products;
 
 async function updateMarket(channel) {
     console.log("updating market");
@@ -51,6 +50,7 @@ async function awaitMarketReaction(message, channel, filter) {
 }   
 
 async function productPurchase(user, channel) {
+    let products = await getProducts();
     let toDelete = []
 
     let message = await channel.send("<@" + user.id + "> Which product would you like to purchase? Your balance is: "
@@ -63,10 +63,10 @@ async function productPurchase(user, channel) {
     //What product does the user want to buy?
     let collected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time'] })
             
-    let response = await confirmProduct(channel, collected, user)
+    let response = await confirmProduct(channel, collected, user, products)
 
     const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
-    await wait(3000);
+    await wait(5000);
 
     toDelete.push(await channel.messages.fetch(collected.first().id))
     toDelete = toDelete.concat(response)
@@ -74,33 +74,44 @@ async function productPurchase(user, channel) {
     message.channel.bulkDelete(toDelete)
 }
 
-async function confirmProduct(channel, message, user) {
+async function confirmProduct(channel, message, user, products) {
     let wallet = await database.getCurrency(user.id)
     
-    // If input is not a valid number
+    // Edge Cases for Product ID
     if (isNaN(message.first().content)) {
         return await channel.send("Please enter a valid number <:PepeKindaCringe:815507957935898654>")
+    } else if (Number(message.first().content) % 1.0 != 0.0) {
+        return await channel.send("Why the decimals? Want me to decimate your wallet bitch?")
+    } else if (Number(message.first().content) < 0) {
+        return await channel.send("idk chief, something doesn't seem right here eh?")
     }
 
-    let productID = message.first().content - 1
+    let productID = Number(message.first().content)
 
-    // If input is not in bounds
-    if (productID < 0 || productID > products.length - 1) {
-        return await channel.send("The product ID you entered is not available in the market.")
+    // After Input Verification, Check if ID is valid
+    if (productID <= 0 || productID > products.length) {
+        return await channel.send("The product ID you entered is not valid in the market.\nDouble check the product's ID, and try again")
     }
 
-    let product = products[productID]
+    let product = products[productID - 1]
+
+    // Edge Cases for Currency Calculation
+    if (wallet < Number(product.price)) {
+        return await channel.send("You have: " + wallet + " <:HentaiCoin:814968693981184030>\n**" +
+                                  product.name + "** costs: " + product.price + " <:HentaiCoin:814968693981184030>\n" +
+                                  "Something doesn't add up now does it <:shek:968122117453393930>")
+    }
+
     let toReturn;
-    console.log(user.id + "      " + products[productID].name + "     " + await database.getCurrency(user.id))
 
     // Confirmation message and await reaction response
     let confirmation = await channel.send("The product you entered is **" + product.name + "**.\n"
-                        + "That would be a total of " + product.price + '<:HentaiCoin:814968693981184030>\n'
+                        + "That would be a total of " + product.price + ' <:HentaiCoin:814968693981184030>\n'
                         + "Proceed with the transaction? React with ✅ or ❌")
     confirmation.react('✅')
     confirmation.react('❌')
-
-    const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != confirmation.author.id
+    
+    const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id == message.first().author.id
     let reaction = await confirmation.awaitReactions(filter, { max: 1 })
 
     let emoji = reaction.first().emoji.name
@@ -110,8 +121,10 @@ async function confirmProduct(channel, message, user) {
     } else if (product.price > wallet) {
         toReturn = await channel.send("It seems you don't have enough money to purchase the product")
     } else {
+        console.log(user.id + "      " + product.name + "     " + await database.getCurrency(user.id))
+        
         let remaining = wallet - product.price
-        toReturn = await channel.send("Your order has been processed. **" + product.name + "** has been purchased.\n"
+        toReturn = await channel.send("Your order was successful.\n**" + product.name + "** has been purchased.\n"
                                 + "Your remaining balance is: " + remaining + " <:HentaiCoin:814968693981184030>")
     }
 
@@ -119,7 +132,7 @@ async function confirmProduct(channel, message, user) {
 }
 
 async function getEmbed() {
-    products = await getProducts();
+    let products = await getProducts();
 
     const embed = await new Discord.MessageEmbed()
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
@@ -129,7 +142,7 @@ async function getEmbed() {
     .addField('\u200B', '\u200B' )
 
     for (var i = 0; i < products.length; i++) {
-        embed.addField((i + 1) + ": " + products[i].name, products[i].description + "\n**Price: " + products[i].price + "**")
+        embed.addField((i + 1) + ": " + products[i].name, products[i].description + "\n**Price: " + products[i].price + "** <:HentaiCoin:814968693981184030>")
         if (i != products.length - 1) {
             embed.addField("Product ID: " + (i + 1), "\u200B" )
         } else {

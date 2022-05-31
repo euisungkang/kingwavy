@@ -4,6 +4,8 @@ const market = require('./market')
 const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
+const database = require('./firebaseSDK');
+const vote = require('./voting')
 const client = new Discord.Client();
 
 client.login(process.env.BOT_TOKEN_KW)
@@ -29,7 +31,7 @@ client.on('ready', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel);
 
-    //votingSystem()
+    vote.votingSystemPP(client)
 });
 
 let prefix = '$'
@@ -45,12 +47,25 @@ client.on('message', message => {
     }
 });
 
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+    if(newMember.nickname && oldMember.nickname !== newMember.nickname) {
+
+        const restricted = await database.getRestrictedNicknames()
+        const ids = Object.keys(restricted)
+
+        if(ids.includes(newMember.id)) {
+            console.log(oldMember.nickname + " (" + oldMember.id + ") has changed their nickname to " + newMember.nickname)
+            newMember.setNickname(restricted[newMember.id])
+        }
+    }
+});
+
 // cron.schedule('00 5 * * *', () => {
 //     console.log('Running cron');
 //     postVideo();
 // })
 
-cron.schedule('00 * * * *', async () => {
+cron.schedule('00 1 1 * *', async () => {
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel)
@@ -147,49 +162,6 @@ async function casinoUpdate(channel, channel2) {
     const filter2 = (reaction, user) => (reaction.emoji.name == '🌓' || reaction.emoji.name == '✊') && user.id != msg2.author.id
     casino.awaitCasinoReaction(client, msg, channel, filter)
     casino.awaitCasinoReaction(client, msg2, channel2, filter2)
-}
-
-//https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes
-async function votingSystem() {
-    let vc = await client.channels.fetch('917676729487749140')
-    let m = await vc.messages.fetch('917677585209630750')
-    let e = await new Discord.MessageEmbed()
-    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Minecraft Server v2: Starting Biome")
-    .setDescription("Due to sufficient demand, we will be restarting the 【 𝓦 𝓪 𝓿 𝔂 】 Minecraft server. "
-                +   "This vote will decide which biome the spawning point will be set at. \n\n"
-                +   "The link below lists all the available biomes.\n"
-                +   "> https://help.minecraft.net/hc/en-us/articles/360046470431-Minecraft-Types-of-Biomes\n\n"
-                +   "**You can vote for as many biomes as you want**")
-    .setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
-    .addFields(
-        { name: '\u200B', value: '\u200B' },
-        { name: 'Plains     🌿', value: '\u200B'},
-        { name: 'Forest     🌳', value: '\u200B'},
-        { name: 'Jungle     🐵', value: '\u200B'},
-        { name: 'Mountain     ⛰️', value: '\u200B'},
-        { name: 'Desert     ☀️', value: '\u200B'},
-        { name: 'Taiga     🐯', value: '\u200B'},
-        { name: 'Snowy Tundra     ❄️', value: '\u200B'},
-        { name: 'Swamp     💩', value: '\u200B'},
-        { name: 'Savannah     🦙', value: '\u200B'},
-        { name: 'Badlands     🍂', value: '\u200B'},
-        { name: 'Ocean     🌊', value: '\u200B'},
-        { name: 'Nether     🔥', value: '\u200B'},
-    )
-
-    m.react('🌿')
-    m.react('🌳')
-    m.react('🐵')
-    m.react('⛰️')
-    m.react('☀️')
-    m.react('🐯')
-    m.react('❄️')
-    m.react('💩')
-    m.react('🦙')
-    m.react('🍂')
-    m.react('🌊')
-    m.react('🔥')
-    m.edit(e)
 }
 
 //Call function to post video on given channelID

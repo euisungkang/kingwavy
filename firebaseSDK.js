@@ -101,10 +101,19 @@ async function removeCurrency(user, amount) {
   })
 }
 
+async function getRestrictedNicknames() {
+  const products = await db.collection('market').doc('nickname')
+
+  const doc = await products.get()
+
+  return doc.data().restricted
+}
+
 module.exports = {
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,
     addCurrency : addCurrency,
-    removeCurrency : removeCurrency
+    removeCurrency : removeCurrency,
+    getRestrictedNicknames : getRestrictedNicknames
 }
