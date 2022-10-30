@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const database = require('./firebaseSDK')
 
 let validEmojis = ['♦', '♥', '<:White:825059935951126548>', '<:Black:825059935662243882>', '🃏'] 
@@ -12,7 +12,7 @@ async function playBlackjack(channel, players) {
     }
     console.log(wallets);
 
-    let embed = await new Discord.MessageEmbed()
+    let embed = new EmbedBuilder()
     .setTitle("Blackjack")
     .setDescription("All players select the emoji corresponding to their starting bets.\nIf some players don't select within 30 seconds, the game will continue without them.\n\n__**Players:**__")
     .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
@@ -29,7 +29,7 @@ async function playBlackjack(channel, players) {
     //     { name: "ALL IN (<30):  🃏", value: '\u200B'},
     // )
 
-    let game = await channel.send(embed);
+    let game = await channel.send({ embeds: [embed] });
     // for (let i = 0; i < validEmojis.length; i++)
     //     game.react(validEmojis[i])
 

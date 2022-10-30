@@ -1,7 +1,7 @@
 const Discord = require('discord.js')
 const database = require('./firebaseSDK')
 
-async function playBlackAndWhite(client, channel, player1, player2, starting_bet) {
+async function playBlackAndWhite(channel, player1, player2, starting_bet) {
     let round = 1;
     let alternate = false
     let pot = starting_bet * 2

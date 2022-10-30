@@ -1,17 +1,28 @@
-const Discord = require('discord.js');
-const Meta = require('html-metadata-parser');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const market = require('./market')
 const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const database = require('./firebaseSDK');
 const vote = require('./voting')
-const client = new Discord.Client();
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildIntegrations,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.DirectMessageReactions
+    ],
+});
 
 client.login(process.env.BOT_TOKEN_KW)
 
 client.on('ready', async () => {
-    console.log("help pls oh god im in heroku")
+    console.log("help pls oh god")
 
     client.user.setActivity("$guide", { type: "LISTENING" })
 
@@ -36,7 +47,7 @@ client.on('ready', async () => {
 
 let prefix = '$'
 
-client.on('message', message => {
+client.on('messageCreate', message => {
     if (!message.content.startsWith(prefix)) return;
 
     const args = message.content.trim().split(/ +/g);
@@ -74,7 +85,7 @@ cron.schedule('00 1 1 * *', async () => {
 async function guideCommand(msg) {
     let replyChannel = await client.channels.fetch(msg.channel.id)
 
-    let embed = await new Discord.MessageEmbed()
+    let embed = new EmbedBuilder()
     .setColor('#ff6ad5')
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Guide")
     .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
@@ -86,9 +97,12 @@ async function guideCommand(msg) {
         { name: "Market", value: "<#820051777650556990>: Spend coins to buy server perks and features"},
         { name: "Casino", value: "<#825143682139029555>: Learn casino games to earn coins against others"}
     )
-    .setFooter('Type ./$help <CommandName>./ for bot commands', 'https://cdn.discordapp.com/app-icons/812904867462643713/c3713856eae103c4cad96111e26bce21.png?size=512');
+    .setFooter({
+        text: 'Type ./$help <CommandName>./ for bot commands',
+        iconURL: 'https://cdn.discordapp.com/app-icons/812904867462643713/c3713856eae103c4cad96111e26bce21.png?size=512'
+    });
 
-    return await replyChannel.send(embed)
+    return await replyChannel.send({ embeds: [embed] })
 }
 
 let ldbIDCurr = '966719668117209129'
@@ -106,7 +120,7 @@ async function leaderboardUpdate(channel) {
         exists = false;
     } finally {
         if (!exists) {
-            let msg = await channel.send(ldbEmbed2)
+            let msg = await channel.send({ embeds: [ldbEmbed2] })
             ldbIDBoost = msg.id
         } else {
             let msg = await channel.messages.fetch(ldbIDBoost)
@@ -123,7 +137,7 @@ async function leaderboardUpdate(channel) {
         exists = false;
     } finally {
         if (!exists) {
-            let msg = await channel.send(ldbEmbed)
+            let msg = await channel.send({ embeds: [ldbEmbed] })
             ldbIDCurr = msg.id
         } else {
             let msg = await channel.messages.fetch(ldbIDCurr)

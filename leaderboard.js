@@ -1,5 +1,5 @@
 const database = require('./firebaseSDK')
-const Discord = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 async function getEmbedCurr(c) {
     let top5 = await database.getTopWallets();
@@ -7,7 +7,7 @@ async function getEmbedCurr(c) {
     let top5Values = Array.from(top5.values());
     // console.log([...top5.entries()]);
 
-    const ldbEmbed = await new Discord.MessageEmbed()
+    const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
 	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Currency Leaderboards")
 //	.setAuthor('𝒦𝒾𝓃𝑔 𝓌𝒶𝓋𝓎', 'https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
@@ -23,12 +23,16 @@ async function getEmbedCurr(c) {
     )
 
     for (var i = 3; i < top5Keys.length; i++) {
-        ldbEmbed.addField((i + 1) + ": " + await getName(c, top5Keys[i]), top5Values[i] + "   <:HentaiCoin:814968693981184030>", true)
+        ldbEmbed.addFields(
+            { name: (i + 1) + ": " + await getName(c, top5Keys[i]), value: top5Values[i] + "   <:HentaiCoin:814968693981184030>", inline: true }
+        )
     }
 
 	ldbEmbed
-    .addField('\u200B', '\u200B')
-	.setFooter('Updated monthly');
+    .addFields({ name: '\u200B', value: '\u200B' })
+	.setFooter({
+        text: 'Updated monthly'
+    });
 
     return ldbEmbed;
 }
@@ -50,7 +54,7 @@ async function getEmbedBoost(c) {
     let names = Array.from(topBoosters.keys())
     let dates = Array.from(topBoosters.values())
 
-    const ldbEmbed = await new Discord.MessageEmbed()
+    const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
 	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Boost Leaderboards")
 //	.setAuthor('𝒦𝒾𝓃𝑔 𝓌𝒶𝓋𝓎', 'https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
@@ -64,7 +68,9 @@ async function getEmbedBoost(c) {
         { name: '\u200B', value: '\u200B' },
     )
 	ldbEmbed
-	.setFooter('Updated hourly');
+	.setFooter({
+        text: 'Updated hourly'
+    });
 
     return ldbEmbed;
 }

@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const BAW = require('./blackandwhite')
 const BJ = require('./blackjack')
 const rps = require('./rps')
@@ -15,7 +15,7 @@ async function updateCasino(channel, csnID) {
         exists = false;
     } finally {
         if (!exists) {
-            let msg = await channel.send(embed)
+            let msg = await channel.send({ embeds: [embed] })
             csnID = msg.id
             return msg;
         } else {
@@ -38,7 +38,7 @@ async function awaitCasinoReaction(client, message, channel, filter) {
     if (emoji == '🌓') {
         let playerArray = await multiplayerBAWRegister(client, channel, user);
         if (playerArray[0] != null) {
-            await BAW.playBlackAndWhite(client, channel, user, playerArray[0], playerArray[1])
+            await BAW.playBlackAndWhite(channel, user, playerArray[0], playerArray[1])
         }
 
     //✊✋✌
@@ -68,7 +68,7 @@ async function awaitCasinoReaction(client, message, channel, filter) {
 async function multiplayerBAWRegister(client, channel, player1) {
     let toreturn = []
 
-    let multiplayer = await channel.send("<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)")
+    let multiplayer = await channel.send({ content: "<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)" })
 
     let filter = (m) => m.author.id == player1.id;
 
@@ -85,7 +85,7 @@ async function multiplayerBAWRegister(client, channel, player1) {
     let player2ID = (collected.first().content).match(/(\d+)/)
 
     if (player2ID == null) {
-        let errMSG = await channel.send("Please enter a valid player :unamused:")
+        let errMSG = await channel.send({ content: "Please enter a valid player :unamused:" })
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
         
@@ -98,7 +98,7 @@ async function multiplayerBAWRegister(client, channel, player1) {
     }
 
     let player2 = await client.users.fetch(player2ID[0]).catch(async err => {
-        let errMSG = await channel.send("Please enter a valid player :unamused:")
+        let errMSG = await channel.send({ content: "Please enter a valid player :unamused:" })
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
 
@@ -115,7 +115,7 @@ async function multiplayerBAWRegister(client, channel, player1) {
 
     sendConfirmation(player2, player1, "Black and White")
     
-    let starting_bet = await channel.send("<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)")
+    let starting_bet = await channel.send({ content: "<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)" })
 
     let filter2 = (m) => m.author.id == player1.id;
     let collected2 = await channel.awaitMessages(filter2, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
@@ -133,7 +133,7 @@ async function multiplayerBAWRegister(client, channel, player1) {
     let stb = collected2.first().content;
 
     if (isNaN(stb) || stb < 1 || stb > 30) {
-        let errMSG = await channel.send("Please enter a valid number <:PikaO:804086658000748584>")
+        let errMSG = await channel.send({ content: "Please enter a valid number <:PikaO:804086658000748584>" })
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
 
@@ -165,7 +165,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
     let todelete = []
     let player2 = null;
 
-    let multiplayer = await channel.send("<@" + player1.id + "> Do you wish to play against a player, or the house? (p or h)")
+    let multiplayer = await channel.send({ content: "<@" + player1.id + "> Do you wish to play against a player, or the house? (p or h)" })
     todelete.push(multiplayer)
 
     let filter = (m) => m.author.id == player1.id;
@@ -183,7 +183,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
 
     let multiplayerDecision = (collected.first().content)
     if (multiplayerDecision == 'p') {
-        let playerPrompt = await channel.send("<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)")
+        let playerPrompt = await channel.send({ content: "<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)" })
         todelete.push(playerPrompt)
         
         let playerCollected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
@@ -199,7 +199,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
         let player2ID = (playerCollected.first().content).match(/(\d+)/)
 
         if (player2ID == null) {
-            let errMSG = await channel.send("Please enter a valid player :unamused:")
+            let errMSG = await channel.send({ content: "Please enter a valid player :unamused:" })
             todelete.push(errMSG);
             const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
             await wait(3000);
@@ -211,7 +211,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
         }
 
         player2 = await client.users.fetch(player2ID[0]).catch(async err => {
-            let errMSG = await channel.send("Please enter a valid player :unamused:")
+            let errMSG = await channel.send({ content: "Please enter a valid player :unamused:"} )
             todelete.push(errMSG)
             const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
             await wait(3000);
@@ -230,7 +230,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
     } else if (multiplayerDecision == 'h') {
         // Poggers
     } else {
-        let errMSG = await channel.send("Please enter either p or h")
+        let errMSG = await channel.send({ content: "Please enter either p or h" })
         todelete.push(errMSG)
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
@@ -241,7 +241,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
     } 
     
     // Starting bet and confirmations
-    let starting_bet = await channel.send("<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)")
+    let starting_bet = await channel.send({ content: "<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)" })
     todelete.push(starting_bet)
 
     let collected2 = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
@@ -257,7 +257,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
     let stb = collected2.first().content;
 
     if (isNaN(stb) || stb < 1 || stb > 30) {
-        let errMSG = await channel.send("Please enter a valid number <:PikaO:804086658000748584>")
+        let errMSG = await channel.send({ content: "Please enter a valid number <:PikaO:804086658000748584>" })
         todelete.push(errMSG)
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
@@ -278,7 +278,7 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
     let toreturn = []
     toreturn[0] = player1
 
-    let multiplayer = await channel.send("<@" + player1.id + "> Choose up to 4 additional players, minimum of 1 additional player.\nPlease mention their names (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎 @𝒦𝒾𝓃𝑔 𝓌𝒶𝓋𝓎 @𝔹𝕒𝕖𝕘𝕚 @102)")
+    let multiplayer = await channel.send({ content: "<@" + player1.id + "> Choose up to 4 additional players, minimum of 1 additional player.\nPlease mention their names (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎 @𝒦𝒾𝓃𝑔 𝓌𝒶𝓋𝓎 @𝔹𝕒𝕖𝕘𝕚 @102)" })
 
     let filter = (m) => m.author.id == player1.id;
 
@@ -300,7 +300,7 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
         playerArray[i] = await (playerArray[i]).match(/(\d+)/)[0]
 
         if (playerArray[i] == null) {
-            let errMSG = await channel.send("Player " + (i + 2) + "'s name is invalid <:PepeYikes:804088050460262470>")
+            let errMSG = await channel.send({ content: "Player " + (i + 2) + "'s name is invalid <:PepeYikes:804088050460262470>" })
             const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
             await wait(3000);
             
@@ -316,7 +316,7 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
     //Check if users exist in server
     for (var i = 0; i < playerArray.length; i++) {
         playerArray[i] = await client.users.fetch(playerArray[i]).catch(async err => {
-            let errMSG = await channel.send("Player " + (i + 2) + " is invalid <:PepeYikes:804088050460262470>")
+            let errMSG = await channel.send({ content: "Player " + (i + 2) + " is invalid <:PepeYikes:804088050460262470>" })
             const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
             await wait(3000);
     
@@ -335,7 +335,7 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
     let msgArray = []
 
     for (var i = 0; i < playerArray.length; i++) {
-        let starting_bet = await channel.send("<@" + playerArray[i].id + "> choose a starting bet\nPlease enter a number (max 30)")
+        let starting_bet = await channel.send({ content: "<@" + playerArray[i].id + "> choose a starting bet\nPlease enter a number (max 30)" })
         msgArray.push(starting_bet)
 
         let filter2 = (m) => m.author.id == playerArray[i].id;
@@ -375,17 +375,17 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
 }
 
 async function sendConfirmation(user, source, game) {
-    let embed = await new Discord.MessageEmbed()
+    let embed = new EmbedBuilder()
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Casino Confirmation")
     .setAuthor(source.username)
     .setDescription(source.username + " has started a **" + game + "** game! \n\nCheck the 【 𝓦 𝓪 𝓿 𝔂 】 casino to play. \nThe game will automatically quit in 30 seconds unless you click ✅.")
     .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
 
-    user.send(embed);
+    user.send({ embeds: [embed] });
 }
 
 async function getEmbed() {
-    const embed = await new Discord.MessageEmbed()
+    const embed = new EmbedBuilder()
 	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Casino")
 	.setDescription("Welcome to the casino.\n"
                   + "You'll lose your life savings, or earn enough to retire for life\n"

@@ -1,9 +1,9 @@
-const Discord = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 async function votingSystem() {
     let vc = await client.channels.fetch('824740900567646248')
     let m = await vc.messages.fetch('824740965214060574')
-    let e = await new Discord.MessageEmbed()
+    let e = new EmbedBuilder()
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Channel Names")
     .setDescription("React with the emoji corresponding to whichever name you like. "
                 +   "You can vote for multiple names. The names with the most votes will be added to 𝓪𝓻𝓬𝓪𝓭𝓮. \n\n"
@@ -40,7 +40,7 @@ async function votingSystem() {
 async function votingSystem() {
     let vc = await client.channels.fetch('888391559442223205')
     let m = await vc.messages.fetch('888397457975808060')
-    let e = await new Discord.MessageEmbed()
+    let e = new EmbedBuilder()
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Banner Vote")
     .setDescription("React with the emoji corresponding to whichever banner you like. "
                 +   "You can vote for multiple banners. The banner with the most votes will be added to 𝓪𝓻𝓬𝓪𝓭𝓮. \n\n"
@@ -64,7 +64,7 @@ async function votingSystem() {
 async function votingSystemPP(client) {
     let vc = await client.channels.fetch('970076413413691412')
     let m = await vc.messages.fetch('970292465561137242')
-    let e = await new Discord.MessageEmbed()
+    let e = new EmbedBuilder()
     .setColor('#ff6ad5')
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Profile Picture Vote")
     .setDescription("React with the emoji corresponding to whichever picture/gif you like. "
@@ -92,7 +92,7 @@ async function votingSystemPP(client) {
 async function votingSystem() {
     let vc = await client.channels.fetch('970076413413691412')
     let m = await vc.messages.fetch('917677585209630750')
-    let e = await new Discord.MessageEmbed()
+    let e = new EmbedBuilder()
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Minecraft Server v2: Starting Biome")
     .setDescription("Due to sufficient demand, we will be restarting the 【 𝓦 𝓪 𝓿 𝔂 】 Minecraft server. "
                 +   "This vote will decide which biome the spawning point will be set at. \n\n"

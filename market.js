@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const { getProducts } = require('./firebaseSDK');
 const database = require('./firebaseSDK');
 
@@ -6,9 +6,9 @@ let mktID = '824832401996906538'
 
 async function updateMarket(channel) {
     console.log("updating market");
-    //channel.send({files: ['https://i.ibb.co/FXbw7wp/Wavy-store.jpg']})
-    //channel.send("Welcome to the 【 𝓦 𝓪 𝓿 𝔂 】 market.\n\nIn the market, you will be able to spend your :HentaiCoin: to buy any of the server perks you want, whenever you want.\n\n**Click the <:HentaiCoin:814968693981184030> reaction, and we'll attend you.**\n\n__**Market Status: **__")
-    //channel.send("__**Market Status: **__\n```diff\n- Currently Offline. Under Maintenance, there will be more products added soon.\n```")
+    //channel.send({ content: {files: ['https://i.ibb.co/FXbw7wp/Wavy-store.jpg']})
+    //channel.send({ content: "Welcome to the 【 𝓦 𝓪 𝓿 𝔂 】 market.\n\nIn the market, you will be able to spend your :HentaiCoin: to buy any of the server perks you want, whenever you want.\n\n**Click the <:HentaiCoin:814968693981184030> reaction, and we'll attend you.**\n\n__**Market Status: **__")
+    //channel.send({ content: "__**Market Status: **__\n```diff\n- Currently Offline. Under Maintenance, there will be more products added soon.\n```")
 
     let embed = await getEmbed();
 
@@ -20,7 +20,7 @@ async function updateMarket(channel) {
         exists = false;
     } finally {
         if (!exists) {
-            let msg = await channel.send(embed)
+            let msg = await channel.send({ embeds: [embed] })
             msg.react('<:HentaiCoin:814968693981184030>')
             mktID = msg.id
             return msg;
@@ -53,8 +53,8 @@ async function productPurchase(user, channel) {
     let products = await getProducts();
     let toDelete = []
 
-    let message = await channel.send("<@" + user.id + "> Which product would you like to purchase? Your balance is: "
-                    +  await database.getCurrency(user.id) + " <:HentaiCoin:814968693981184030>")
+    let message = await channel.send({ content: "<@" + user.id + "> Which product would you like to purchase? Your balance is: "
+                    +  await database.getCurrency(user.id) + " <:HentaiCoin:814968693981184030>" })
     
     toDelete.push(message)
 
@@ -79,35 +79,35 @@ async function confirmProduct(channel, message, user, products) {
     
     // Edge Cases for Product ID
     if (isNaN(message.first().content)) {
-        return await channel.send("Please enter a valid number <:PepeKindaCringe:815507957935898654>")
+        return await channel.send({ content: "Please enter a valid number <:PepeKindaCringe:815507957935898654>" })
     } else if (Number(message.first().content) % 1.0 != 0.0) {
-        return await channel.send("Why the decimals? Want me to decimate your wallet bitch?")
+        return await channel.send({ content: "Why the decimals? Want me to decimate your wallet bitch?" })
     } else if (Number(message.first().content) < 0) {
-        return await channel.send("idk chief, something doesn't seem right here eh?")
+        return await channel.send({ content: "idk chief, something doesn't seem right here eh?" })
     }
 
     let productID = Number(message.first().content)
 
     // After Input Verification, Check if ID is valid
     if (productID <= 0 || productID > products.length) {
-        return await channel.send("The product ID you entered is not valid in the market.\nDouble check the product's ID, and try again")
+        return await channel.send({ content: "The product ID you entered is not valid in the market.\nDouble check the product's ID, and try again" })
     }
 
     let product = products[productID - 1]
 
     // Edge Cases for Currency Calculation
     if (wallet < Number(product.price)) {
-        return await channel.send("You have: " + wallet + " <:HentaiCoin:814968693981184030>\n**" +
+        return await channel.send({ content: "You have: " + wallet + " <:HentaiCoin:814968693981184030>\n**" +
                                   product.name + "** costs: " + product.price + " <:HentaiCoin:814968693981184030>\n" +
-                                  "Something doesn't add up now does it <:shek:968122117453393930>")
+                                  "Something doesn't add up now does it <:shek:968122117453393930>" })
     }
 
     let toReturn;
 
     // Confirmation message and await reaction response
-    let confirmation = await channel.send("The product you entered is **" + product.name + "**.\n"
+    let confirmation = await channel.send({ content: "The product you entered is **" + product.name + "**.\n"
                         + "That would be a total of " + product.price + ' <:HentaiCoin:814968693981184030>\n'
-                        + "Proceed with the transaction? React with ✅ or ❌")
+                        + "Proceed with the transaction? React with ✅ or ❌" })
     confirmation.react('✅')
     confirmation.react('❌')
     
@@ -117,15 +117,15 @@ async function confirmProduct(channel, message, user, products) {
     let emoji = reaction.first().emoji.name
 
     if (emoji == '❌') {
-        toReturn = await channel.send("Got it, your order won't be processed")
+        toReturn = await channel.send({ content: "Got it, your order won't be processed" })
     } else if (product.price > wallet) {
-        toReturn = await channel.send("It seems you don't have enough money to purchase the product")
+        toReturn = await channel.send({ content: "It seems you don't have enough money to purchase the product" })
     } else {
         console.log(user.id + "      " + product.name + "     " + await database.getCurrency(user.id))
         
         let remaining = wallet - product.price
-        toReturn = await channel.send("Your order was successful.\n**" + product.name + "** has been purchased.\n"
-                                + "Your remaining balance is: " + remaining + " <:HentaiCoin:814968693981184030>")
+        toReturn = await channel.send({ content: "Your order was successful.\n**" + product.name + "** has been purchased.\n"
+                                + "Your remaining balance is: " + remaining + " <:HentaiCoin:814968693981184030>" })
     }
 
     return [toReturn, confirmation]
@@ -134,19 +134,27 @@ async function confirmProduct(channel, message, user, products) {
 async function getEmbed() {
     let products = await getProducts();
 
-    const embed = await new Discord.MessageEmbed()
+    const embed = new EmbedBuilder()
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
     .setDescription("To purchase a product, first click on the <:HentaiCoin:814968693981184030>, and we will attend you.\n\n" +
                     "Make sure you know the product ID before you purchase.")
-    .addField('\u200B', '\u200B' )
+    .addFields(
+        { name: '\u200B', value: '\u200B' }
+    )
 
     for (var i = 0; i < products.length; i++) {
-        embed.addField((i + 1) + ": " + products[i].name, products[i].description + "\n**Price: " + products[i].price + "** <:HentaiCoin:814968693981184030>")
+        embed.addFields(
+            { name: (i + 1) + ": " + products[i].name, value: products[i].description + "\n**Price: " + products[i].price + "** <:HentaiCoin:814968693981184030>" }
+        )
         if (i != products.length - 1) {
-            embed.addField("Product ID: " + (i + 1), "\u200B" )
+            embed.addFields(
+                { name: "Product ID: " + (i + 1), value: "\u200B" }
+            )
         } else {
-            embed.addField("Product ID: " + (i + 1), "\u200B")
+            embed.addFields(
+                { name: "Product ID: " + (i + 1), value: "\u200B" }
+            )
         }
     }
 
