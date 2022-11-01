@@ -37,7 +37,7 @@ async function awaitMarketReaction(message, channel, filter) {
     console.log("awaiting market reaction")
     let user;
 
-    await message.awaitReactions(filter, { max: 1 })
+    await message.awaitReactions({ filter, max: 1 })
     .then(async collected => {
         user = collected.first().users.cache.last()
         await message.reactions.cache.find(r => r.emoji.id == '814968693981184030').users.remove(user)
@@ -53,15 +53,15 @@ async function productPurchase(user, channel) {
     let products = await getProducts();
     let toDelete = []
 
-    let message = await channel.send({ content: "<@" + user.id + "> Which product would you like to purchase? Your balance is: "
-                    +  await database.getCurrency(user.id) + " <:HentaiCoin:814968693981184030>" })
+    let message = await channel.send({ content: "<@" + user.id + "> Enter the ID of the product you want to purchase. Your **cumulative** balance is: "
+                    +  await database.getCum(user.id) + " <:HentaiCoin:814968693981184030>" })
     
     toDelete.push(message)
 
     let filter = (m) => m.author.id == user.id;
 
     //What product does the user want to buy?
-    let collected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time'] })
+    let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
             
     let response = await confirmProduct(channel, collected, user, products)
 
@@ -75,13 +75,13 @@ async function productPurchase(user, channel) {
 }
 
 async function confirmProduct(channel, message, user, products) {
-    let wallet = await database.getCurrency(user.id)
+    let wallet = await database.getCum(user.id)
     
     // Edge Cases for Product ID
     if (isNaN(message.first().content)) {
         return await channel.send({ content: "Please enter a valid number <:PepeKindaCringe:815507957935898654>" })
     } else if (Number(message.first().content) % 1.0 != 0.0) {
-        return await channel.send({ content: "Why the decimals? Want me to decimate your wallet bitch?" })
+        return await channel.send({ content: "Why the decimals? Want me to decimate your wallet bish?" })
     } else if (Number(message.first().content) < 0) {
         return await channel.send({ content: "idk chief, something doesn't seem right here eh?" })
     }
@@ -112,7 +112,7 @@ async function confirmProduct(channel, message, user, products) {
     confirmation.react('❌')
     
     const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id == message.first().author.id
-    let reaction = await confirmation.awaitReactions(filter, { max: 1 })
+    let reaction = await confirmation.awaitReactions({filter, max: 1 })
 
     let emoji = reaction.first().emoji.name
 
@@ -121,14 +121,26 @@ async function confirmProduct(channel, message, user, products) {
     } else if (product.price > wallet) {
         toReturn = await channel.send({ content: "It seems you don't have enough money to purchase the product" })
     } else {
-        console.log(user.id + "      " + product.name + "     " + await database.getCurrency(user.id))
-        
         let remaining = wallet - product.price
+
+        console.log(user.id + "      " + user.username + " purchased " + product.name +
+        "     Before: " + wallet + " After: " + remaining)
+
+        //database.removeCum(user, product.price)
+
         toReturn = await channel.send({ content: "Your order was successful.\n**" + product.name + "** has been purchased.\n"
-                                + "Your remaining balance is: " + remaining + " <:HentaiCoin:814968693981184030>" })
+                                + "Your remaining **cumulative** balance is: " + remaining + " <:HentaiCoin:814968693981184030>" })
     }
 
     return [toReturn, confirmation]
+}
+
+async function processProduct(user, product, channel, productID) {
+    if (productID == 5) {
+        let restricted = database.getRestrictedNicknames();
+
+        restricted.push(user.id)
+    }
 }
 
 async function getEmbed() {
@@ -137,7 +149,7 @@ async function getEmbed() {
     const embed = new EmbedBuilder()
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
-    .setDescription("To purchase a product, first click on the <:HentaiCoin:814968693981184030>, and we will attend you.\n\n" +
+    .setDescription("To purchase a product, click on the <:HentaiCoin:814968693981184030>, and I will attend you.\n\n" +
                     "Make sure you know the product ID before you purchase.")
     .addFields(
         { name: '\u200B', value: '\u200B' }

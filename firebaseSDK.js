@@ -53,6 +53,17 @@ async function getCurrency(id) {
   return 0;
 }
 
+async function getCum(id) {
+    let user = db.collection("wallets").doc(id);
+  
+    const doc = await user.get();
+    if (doc.exists) {
+      return doc.data().cum;
+    }
+  
+    return 0;
+}
+
 async function addCurrency(user, amount) {
   let id = user.id
   let name = user.username
@@ -103,6 +114,30 @@ async function removeCurrency(user, amount) {
   })
 }
 
+async function removeCum(user, amount) {
+    let id = user.id
+    let name = user.username
+
+    let userDB = db.collection('wallets').doc(id);
+    let aggregate_amount;
+
+    const doc = await userDB.get()
+    if (doc.exists) {
+        aggregate_amount = doc.data().cum - amount;
+        console.log(doc.data())
+    }
+
+    await userDB.update({
+        userID: id,
+        name: name,
+        cum: aggregate_amount
+    }).then(() => {
+        console.log("Document written successfully")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function getRestrictedNicknames() {
   const products = await db.collection('market').doc('nickname')
 
@@ -111,11 +146,18 @@ async function getRestrictedNicknames() {
   return doc.data().restricted
 }
 
+async function updateRestrictedNicknames() {
+
+}
+
 module.exports = {
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,
+    getCum : getCum,
     addCurrency : addCurrency,
     removeCurrency : removeCurrency,
-    getRestrictedNicknames : getRestrictedNicknames
+    removeCum : removeCum,
+    getRestrictedNicknames : getRestrictedNicknames,
+    updateRestrictedNicknames : updateRestrictedNicknames
 }

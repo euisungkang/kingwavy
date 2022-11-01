@@ -20,7 +20,7 @@ async function updateCasino(channel, csnID) {
             return msg;
         } else {
             let msg = await channel.messages.fetch(csnID)
-            msg.edit(embed);
+            msg.edit({ embeds: [embed] });
             return msg
         }
     }
@@ -29,7 +29,7 @@ async function updateCasino(channel, csnID) {
 async function awaitCasinoReaction(client, message, channel, filter) {
     console.log("awaiting casino reaction")
 
-    let collected = await message.awaitReactions(filter, { max: 1 })
+    let collected = await message.awaitReactions({ filter, max: 1 })
     let user = collected.first().users.cache.last()
     let emoji = collected.first().emoji.name
     message.reactions.cache.find(r => r.emoji.name == emoji).users.remove(user)
@@ -73,7 +73,8 @@ async function multiplayerBAWRegister(client, channel, player1) {
     let filter = (m) => m.author.id == player1.id;
 
     // If player1 doesn't respond to player1 prompt
-    let collected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+    let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+    .catch(async err => {
         multiplayer.delete()
         return null;
     })
@@ -115,10 +116,11 @@ async function multiplayerBAWRegister(client, channel, player1) {
 
     sendConfirmation(player2, player1, "Black and White")
     
-    let starting_bet = await channel.send({ content: "<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)" })
+    let starting_bet = await channel.send({ content: "<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 100)" })
 
     let filter2 = (m) => m.author.id == player1.id;
-    let collected2 = await channel.awaitMessages(filter2, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+    let collected2 = await channel.awaitMessages({ filter2, max: 1, time: 30000, errors: ['time']})
+    .catch(async err => {
         channel.messages.fetch(collected.first().id).then(m => m.delete())
         multiplayer.delete()
         starting_bet.delete()
@@ -132,7 +134,7 @@ async function multiplayerBAWRegister(client, channel, player1) {
 
     let stb = collected2.first().content;
 
-    if (isNaN(stb) || stb < 1 || stb > 30) {
+    if (isNaN(stb) || stb < 1 || stb > 100) {
         let errMSG = await channel.send({ content: "Please enter a valid number <:PikaO:804086658000748584>" })
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
         await wait(3000);
@@ -146,8 +148,6 @@ async function multiplayerBAWRegister(client, channel, player1) {
         toreturn[0] = null
         return toreturn;
     }
-
-
 
     channel.messages.fetch(collected.first().id).then(m => m.delete())
     channel.messages.fetch(collected2.first().id).then(m => m.delete())
@@ -171,7 +171,8 @@ async function multiplayerRPSRegister(client, channel, player1) {
     let filter = (m) => m.author.id == player1.id;
 
     // If player1 doesn't respond to player1 prompt
-    let collected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+    let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+    .catch(async err => {
         multiplayer.delete()
         return null;
     })
@@ -186,7 +187,8 @@ async function multiplayerRPSRegister(client, channel, player1) {
         let playerPrompt = await channel.send({ content: "<@" + player1.id + "> Choose player 2\nPlease mention their name (@𝒬𝓊𝑒𝑒𝓃 𝓌𝒶𝓋𝓎)" })
         todelete.push(playerPrompt)
         
-        let playerCollected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+        let playerCollected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        .catch(async err => {
             channel.bulkDelete(todelete);
             return null;
         })
@@ -241,10 +243,11 @@ async function multiplayerRPSRegister(client, channel, player1) {
     } 
     
     // Starting bet and confirmations
-    let starting_bet = await channel.send({ content: "<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 30)" })
+    let starting_bet = await channel.send({ content: "<@" + player1.id + "> Now choose a starting bet\nPlease enter a number (max 100)" })
     todelete.push(starting_bet)
 
-    let collected2 = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+    let collected2 = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+    .catch(async err => {
         channel.bulkDelete(todelete)
         return null
     })
@@ -256,7 +259,7 @@ async function multiplayerRPSRegister(client, channel, player1) {
 
     let stb = collected2.first().content;
 
-    if (isNaN(stb) || stb < 1 || stb > 30) {
+    if (isNaN(stb) || stb < 1 || stb > 100) {
         let errMSG = await channel.send({ content: "Please enter a valid number <:PikaO:804086658000748584>" })
         todelete.push(errMSG)
         const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
@@ -283,7 +286,8 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
     let filter = (m) => m.author.id == player1.id;
 
     // If player1 doesn't respond to player1 prompt
-    let collected = await channel.awaitMessages(filter, { max: 1, time: 30000, errors: ['time']}).catch(async err => {
+    let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+    .catch(async err => {
         console.log(err)
         multiplayer.delete()
         return null;
@@ -335,11 +339,12 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
     let msgArray = []
 
     for (var i = 0; i < playerArray.length; i++) {
-        let starting_bet = await channel.send({ content: "<@" + playerArray[i].id + "> choose a starting bet\nPlease enter a number (max 30)" })
+        let starting_bet = await channel.send({ content: "<@" + playerArray[i].id + "> choose a starting bet\nPlease enter a number (max 100)" })
         msgArray.push(starting_bet)
 
         let filter2 = (m) => m.author.id == playerArray[i].id;
-        let collected2 = await channel.awaitMessages(filter2, { max: 1, time: 15000, errors: ['time']}).catch(async err => {
+        let collected2 = await channel.awaitMessages({ filter2, max: 1, time: 15000, errors: ['time'] })
+        .catch(async err => {
             channel.messages.fetch(collected.first().id).then(m => m.delete())
             multiplayer.delete()
             channel.bulkDelete(msgArray)
@@ -377,7 +382,7 @@ async function multiplayerBlackjackRegister(client, channel, player1) {
 async function sendConfirmation(user, source, game) {
     let embed = new EmbedBuilder()
     .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Casino Confirmation")
-    .setAuthor(source.username)
+    .setAuthor({ name: source.username })
     .setDescription(source.username + " has started a **" + game + "** game! \n\nCheck the 【 𝓦 𝓪 𝓿 𝔂 】 casino to play. \nThe game will automatically quit in 30 seconds unless you click ✅.")
     .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
 

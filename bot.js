@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActivityType } = require('discord.js');
 const market = require('./market')
 const casino = require('./casino')
 const leaderboard = require('./leaderboard')
@@ -24,7 +24,7 @@ client.login(process.env.BOT_TOKEN_KW)
 client.on('ready', async () => {
     console.log("help pls oh god")
 
-    client.user.setActivity("$guide", { type: "LISTENING" })
+    client.user.setActivity("$guide", { type: ActivityType.Listening })
 
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)

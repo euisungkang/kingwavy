@@ -1,4 +1,4 @@
-const Discord = require('discord.js')
+const { EmbedBuilder } = require('discord.js')
 const database = require('./firebaseSDK')
 
 async function playBlackAndWhite(channel, player1, player2, starting_bet) {
@@ -12,9 +12,8 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
     let wallet2 = await database.getCurrency(player2.id)
 
     if (wallet1 == 0 || wallet2 == 0) return;
-
  
-    let embed = await new Discord.MessageEmbed()
+    let embed = new EmbedBuilder()
     .setTitle("Black and White")
     .setDescription("Choose Black or White, and raise for Gray. \nMake your selection by reacting to the emojis.\n\n**Player 2 has to click ✅ to start the game**")
     .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
@@ -30,15 +29,16 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
     let highest = { player: "", emoji: "", wallet: 0}
 
     let raise;
-    let game = await channel.send(embed);
-    game.react('✅')
-    game.react('❌')
+    let game = await channel.send({ embeds: [embed] });
+    await game.react('✅')
+    await game.react('❌')
         
 
     let filterConfirm = (reaction, user) => ((reaction.emoji.name == '✅' && user.id == player2.id) ||
                                             (reaction.emoji.name == '❌' && (user.id == player1.id || user.id == player2.id)))
 
-    let collectedConfirm = await game.awaitReactions(filterConfirm, { max: 1, time: 30000, errors: ['time']}).catch(err => {
+    let collectedConfirm = await game.awaitReactions({ filterConfirm, max: 1, time: 30000, errors: ['time'] })
+    .catch(err => {
         console.log("Player didnt show up")
         return null
     })
@@ -53,7 +53,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
 
 
     if (emojiConfirm == '❌') {
-        let embed2 = await new Discord.MessageEmbed()
+        let embed2 = new EmbedBuilder()
         .setTitle("Black and White")
         .setDescription("Choose Black or White, and raise for Gray. \nMake your selection by reacting to the emojis.\n")
         .setThumbnail('https://i.ibb.co/N1f9Qwg/casino.png')
@@ -61,7 +61,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
             { name: '\u200B', value: '\u200B' },
             { name: "GAME EXITING", value: '\u200B'}
         )
-        game.edit(embed2)
+        game.edit({ embeds: [embed2] })
         game.reactions.cache.find(r => r.emoji.name == '✅').remove()
         game.reactions.cache.find(r => r.emoji.name == '❌').remove()
         
@@ -75,7 +75,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
     game.reactions.cache.find(r => r.emoji.name == '❌').remove()
 
     if (wallet1 > wallet2) {
-        embed.addField(player2.username + " has less coins.\nMake your black or white selection first.", '\u200B')
+        embed.addFields({ name: player2.username + " has less coins.\nMake your black or white selection first.", value: '\u200B' })
         lowest.player = player2;
         lowest.wallet = wallet2
         highest.wallet = wallet1
@@ -83,7 +83,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
         lowest_wallet[1] = wallet2
         highest.player = player1;
     } else {
-        embed.addField(player1.username + " has less coins.\nMake your black or white selection first.", "\u200B")
+        embed.addFields({ name: player1.username + " has less coins.\nMake your black or white selection first.", value: "\u200B" })
         lowest.player = player1
         lowest.wallet = wallet1
         highest.wallet = wallet2
@@ -92,8 +92,8 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
         highest.player = player2
     }
 
-    game.react('<:Black:825059935662243882>')
-    game.react('<:White:825059935951126548>')
+    await game.react('<:Black:825059935662243882>')
+    await game.react('<:White:825059935951126548>')
 
     do {
         if (await bugCheck(wallet1, wallet2, player1, player2))        break;
@@ -102,17 +102,18 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
             pot = lowest_wallet[1] * 2
             all_in = true;
 
-            embed.addField(lowest_wallet[0].username + " HAS ALL INNED", "The pot total is now **" + pot + "** <:HentaiCoin:814968693981184030>")
+            embed.addFields({ name: lowest_wallet[0].username + " HAS ALL INNED", value: "The pot total is now **" + pot + "** <:HentaiCoin:814968693981184030>" })
         }
 
         raise = false;
-        game.edit(embed)
+        game.edit({ embeds: [embed] })
 
         let filter = (reaction, user) => ((reaction.emoji.id == '825059935662243882' || reaction.emoji.id == '825059935951126548')
                                      && user.id == lowest.player.id) || (reaction.emoji.name == '❌' && (user.id == player1.id || user.id == player2.id))
 
         
-        let collected = await game.awaitReactions(filter, { max: 1, time: 30000, errors: ['time']}).catch(err => {
+        let collected = await game.awaitReactions({ filter, max: 1, time: 30000, errors: ['time'] })
+        .catch(err => {
             console.log("Player didnt show up")
             return null
         })
@@ -130,15 +131,15 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
         if (emoji == 'Black')   highest.emoji = "White"
         else                    highest.emoji = "Black"
 
-
-        embed.addField('\u200B', "**" + lowest.player.username + "** has chosen **" + lowest.emoji + "**\n**" + highest.player.username + "** has chosen **" + highest.emoji + "** by default")
+        //embed.addFields('\u200B', "**" + lowest.player.username + "** has chosen **" + lowest.emoji + "**\n**" + highest.player.username + "** has chosen **" + highest.emoji + "** by default")
 
         embed.addFields(
+            { name: '\u200B', value: "**" + lowest.player.username + "** has chosen **" + lowest.emoji + "**\n**" + highest.player.username + "** has chosen **" + highest.emoji + "** by default"},
             { name: "\u200B", value: "⌛ Generating a random color"},
             { name: '\u200B', value: '\u200B'}
         )
 
-        game.edit(embed)
+        game.edit({ embeds: [embed] })
 
         // 1 = Black, 2 = White, 3 = Gray
         let color;
@@ -150,25 +151,25 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
         await wait(5000);
 
         if (color == 1) {
-            embed.addField("\u200B", "The dealer has chosen Black!")
+            embed.addFields({ name: "\u200B", value: "The dealer has chosen Black!" })
 
             if (lowest.emoji == "Black")
                 winnerMessage(embed, lowest, highest, pot)
             else
                 winnerMessage(embed, highest, lowest, pot)
 
-            game.edit(embed)
+            game.edit({ embeds: [embed] })
             break;
 
         } else if (color == 2) {
-            embed.addField("\u200B", "The dealer has chosen White!")
+            embed.addFields({ name: "\u200B", value: "The dealer has chosen White!" })
 
             if (lowest.emoji == "White")
                 winnerMessage(embed, lowest, highest, pot)
             else
                 winnerMessage(embed, highest, lowest, pot)
 
-            game.edit(embed)
+            game.edit({ embeds: [embed] })
             break;
 
         } else {
@@ -177,7 +178,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
                 { name: "\The dealer has chosen Gray!", value: "The pot has been doubled"},
                 { name: 'Pot:  ' + pot, value: '\u200B'}
             )
-            game.edit(embed)
+            game.edit({ embeds: [embed] })
             alternate = !alternate
             raise = true;
             let buffer = lowest
@@ -185,7 +186,7 @@ async function playBlackAndWhite(channel, player1, player2, starting_bet) {
             highest = buffer;
         }
 
-        embed.addField(lowest.player.username + " make your selection", '\u200B')
+        embed.addFields({ name: lowest.player.username + " make your selection", value: '\u200B' })
         round++;
 
     } while (raise)
