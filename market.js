@@ -33,7 +33,7 @@ async function updateMarket(channel) {
     }
 }
 
-async function awaitMarketReaction(message, channel, filter) {
+async function awaitMarketReaction(message, channel, logs, members, filter) {
     console.log("awaiting market reaction")
     let user;
 
@@ -44,37 +44,37 @@ async function awaitMarketReaction(message, channel, filter) {
     })
     .catch(err => console.log(err))
 
-    await productPurchase(user, channel).catch(err => console.log(err))
+    await productPurchase(user, channel, logs, members).catch(err => console.log(err))
 
-    awaitMarketReaction(message, channel, filter);
+    await deleteAll(channel)
+
+    awaitMarketReaction(message, channel, members, filter);
 }   
 
-async function productPurchase(user, channel) {
+async function productPurchase(user, channel, logs, members) {
     let products = await getProducts();
-    let toDelete = []
 
     let message = await channel.send({ content: "<@" + user.id + "> Enter the ID of the product you want to purchase. Your **cumulative** balance is: "
                     +  await database.getCum(user.id) + " <:HentaiCoin:814968693981184030>" })
-    
-    toDelete.push(message)
 
     let filter = (m) => m.author.id == user.id;
 
     //What product does the user want to buy?
     let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+    .catch(err => {
+        return null;
+    })
+    if (collected == null) {
+        return
+    }
             
-    let response = await confirmProduct(channel, collected, user, products)
+    await confirmProduct(channel, logs, collected, members, user, products)
 
     const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
     await wait(5000);
-
-    toDelete.push(await channel.messages.fetch(collected.first().id))
-    toDelete = toDelete.concat(response)
-
-    message.channel.bulkDelete(toDelete)
 }
 
-async function confirmProduct(channel, message, user, products) {
+async function confirmProduct(channel, logs, message, members, user, products) {
     let wallet = await database.getCum(user.id)
     
     // Edge Cases for Product ID
@@ -102,8 +102,6 @@ async function confirmProduct(channel, message, user, products) {
                                   "Something doesn't add up now does it <:shek:968122117453393930>" })
     }
 
-    let toReturn;
-
     // Confirmation message and await reaction response
     let confirmation = await channel.send({ content: "The product you entered is **" + product.name + "**.\n"
                         + "That would be a total of " + product.price + ' <:HentaiCoin:814968693981184030>\n'
@@ -117,30 +115,104 @@ async function confirmProduct(channel, message, user, products) {
     let emoji = reaction.first().emoji.name
 
     if (emoji == '❌') {
-        toReturn = await channel.send({ content: "Got it, your order won't be processed" })
+        await channel.send({ content: "Got it, your order won't be processed" })
     } else if (product.price > wallet) {
-        toReturn = await channel.send({ content: "It seems you don't have enough money to purchase the product" })
+        await channel.send({ content: "It seems you don't have enough money to purchase the product" })
     } else {
         let remaining = wallet - product.price
+
+        if (await processProduct(user, channel, members, productID) == false)
+            return
 
         console.log(user.id + "      " + user.username + " purchased " + product.name +
         "     Before: " + wallet + " After: " + remaining)
 
         //database.removeCum(user, product.price)
 
-        toReturn = await channel.send({ content: "Your order was successful.\n**" + product.name + "** has been purchased.\n"
+        await channel.send({ content: "Your order was successful.\n**" + product.name + "** has been purchased.\n"
                                 + "Your remaining **cumulative** balance is: " + remaining + " <:HentaiCoin:814968693981184030>" })
+    
+        await logs.send({ content: "```" + new Date().toUTCString() +
+                        "\nProduct: " + product.description +
+                        "\nID: " + user.id +
+                        "\nName: " + user.username +
+                        "\nPrice: " + product.price +
+                        "\nCurrency Before: " + wallet +
+                        "\nRemaining: " + remaining +
+                        "```"
+        })
     }
 
-    return [toReturn, confirmation]
+    return
 }
 
-async function processProduct(user, product, channel, productID) {
-    if (productID == 5) {
-        let restricted = database.getRestrictedNicknames();
+async function processProduct(user, channel, members, productID) {
 
-        restricted.push(user.id)
+    // productID == 5 is setting someone's nickname for 1 month
+    if (productID == 5) {
+        let restricted = await database.getRestrictedNicknames();
+
+        // Collect the user whose nickname is to be changed
+        await channel.send({ content: "@ the person you want to apply the nickname change (i.e. <@812904867462643713>)\nThey will not be able to change their nickname for a month" })
+
+        let filter = (m) => m.author.id == user.id;
+
+        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        .catch(err => {
+            console.log(err)
+            return null;
+        })
+        if (collected == null) {
+            return false
+        }
+
+        let polished = (collected.first().content).match(/(\d+)/)
+
+        if (restricted.hasOwnProperty(polished[0])) {
+            await channel.send({ content: "Seems like " + collected.first().content + " is already a target.\n" +
+                                "Either pick someone else, or try again after " + collected.first().content + "'s restriction is lifted"})
+            return false
+        }
+
+        let target = await members.fetch(polished[0], { force: true })
+
+        // Collect the username to be changed to
+        await channel.send({ content: "What do you want " + collected.first().content +
+                            "'s nickname to be changed to (i.e. Cum Guzzler)?"})
+
+        let collected2 = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        .catch(err => {
+            console.log(err)
+            return null
+        })
+        if (collected == null) {
+            return false
+        }
+
+        // Add restricted name to current restricted names
+        let updateRestricted = {}
+        updateRestricted[polished[0]] = collected2.first().content
+
+        updateRestricted = Object.assign(restricted, updateRestricted)
+
+        console.log(updateRestricted)
+
+        database.updateRestrictedNicknames(updateRestricted)
+
+        target.setNickname(collected2.first().content)
+
+        return true
     }
+}
+
+async function deleteAll(channel) {
+    let filtered;
+    do {
+        let fetched = await channel.messages.fetch({ limit: 100 })
+        filtered = fetched.filter(msg => msg.id != '824832401996906538')
+        //console.log(filtered)
+        channel.bulkDelete(filtered)
+    } while(filtered.size >= 2)
 }
 
 async function getEmbed() {

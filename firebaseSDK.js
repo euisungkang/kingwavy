@@ -146,8 +146,16 @@ async function getRestrictedNicknames() {
   return doc.data().restricted
 }
 
-async function updateRestrictedNicknames() {
+async function updateRestrictedNicknames(res) {
+    let userDB = db.collection('market').doc('nickname')
 
+    await userDB.update({
+        restricted: res
+    }).then(() => {
+        console.log("Document written successfully: Restricted Names")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
 }
 
 module.exports = {

@@ -24,12 +24,16 @@ client.login(process.env.BOT_TOKEN_KW)
 client.on('ready', async () => {
     console.log("help pls oh god")
 
+    // let test = await client.users.fetch('237018129664966656')
+    // console.log(test)
+
     client.user.setActivity("$guide", { type: ActivityType.Listening })
 
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     let mkt_channel = await client.channels.fetch('820051777650556990')
-    marketUpdate(mkt_channel)
+    let mkt_logs = await client.channels.fetch('1038822879787229214')
+    marketUpdate(mkt_channel, mkt_logs)
 
     //Update casinos
     //let csn_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
@@ -146,12 +150,16 @@ async function leaderboardUpdate(channel) {
     }
 }
 
-async function marketUpdate(channel) {
+async function marketUpdate(channel, logs) {
     let msg = await market.updateMarket(channel);
 
     msg.react('<:HentaiCoin:814968693981184030>')
     const filter = (reaction, user) => reaction.emoji.id == '814968693981184030' && user.id != msg.author.id
-    market.awaitMarketReaction(msg, channel, filter)
+
+    // Wavy Guild
+    const guild = await client.guilds.resolve('687839393444397105')
+
+    market.awaitMarketReaction(msg, channel, logs, guild.members, filter)
 }
 
 let csnID = '825564278584639528'
