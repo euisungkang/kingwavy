@@ -191,7 +191,13 @@ async function processProduct(user, channel, members, productID) {
 
         // Add restricted name to current restricted names
         let updateRestricted = {}
-        updateRestricted[polished[0]] = collected2.first().content
+
+        // Get +week date from date purchased. Also set time to beginning of the day
+        let date = new Date()
+        date.setDate(date.getDate() + 7)
+        date.setUTCHours(0,0,0,0)
+
+        updateRestricted[polished[0]] = [collected2.first().content, target.nickname, date]
 
         updateRestricted = Object.assign(restricted, updateRestricted)
 

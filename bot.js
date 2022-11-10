@@ -65,13 +65,14 @@ client.on('messageCreate', message => {
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
     if(newMember.nickname && oldMember.nickname !== newMember.nickname) {
 
-        const restricted = await database.getRestrictedNicknames()
-        const ids = Object.keys(restricted)
-
-        if(ids.includes(newMember.id)) {
+        let restricted = await database.getRestrictedNicknames();
+        if (restricted.hasOwnProperty(newMember.id) && oldMember.nickname == restricted[oldMember.id][1])
+            return
+        else if (restricted.hasOwnProperty(newMember.id)) {
             console.log(oldMember.nickname + " (" + oldMember.id + ") has changed their nickname to " + newMember.nickname)
-            newMember.setNickname(restricted[newMember.id])
+            newMember.setNickname(restricted[newMember.id][0])
         }
+    
     }
 });
 
