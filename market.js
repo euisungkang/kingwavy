@@ -33,7 +33,7 @@ async function updateMarket(channel) {
     }
 }
 
-async function awaitMarketReaction(message, channel, logs, members, filter) {
+async function awaitMarketReaction(message, channel, logs, guild, filter) {
     console.log("awaiting market reaction")
     let user;
 
@@ -44,18 +44,18 @@ async function awaitMarketReaction(message, channel, logs, members, filter) {
     })
     .catch(err => console.log(err))
 
-    await productPurchase(user, channel, logs, members).catch(err => console.log(err))
+    await productPurchase(user, channel, logs, guild).catch(err => console.log(err))
 
     await deleteAll(channel)
 
-    awaitMarketReaction(message, channel, members, filter);
+    awaitMarketReaction(message, channel, logs, guild, filter);
 }   
 
-async function productPurchase(user, channel, logs, members) {
+async function productPurchase(user, channel, logs, guild) {
     let products = await getProducts();
 
-    let message = await channel.send({ content: "<@" + user.id + "> Enter the ID of the product you want to purchase. Your **cumulative** balance is: "
-                    +  await database.getCum(user.id) + " <:HentaiCoin:814968693981184030>" })
+    await channel.send({ content: "<@" + user.id + "> Enter the ID of the product you want to purchase. Your **cumulative** balance is: "
+                        +  await database.getCum(user.id) + " <:HentaiCoin:814968693981184030>" })
 
     let filter = (m) => m.author.id == user.id;
 
@@ -68,13 +68,13 @@ async function productPurchase(user, channel, logs, members) {
         return
     }
             
-    await confirmProduct(channel, logs, collected, members, user, products)
+    await confirmProduct(channel, logs, collected, guild, user, products)
 
     const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
     await wait(5000);
 }
 
-async function confirmProduct(channel, logs, message, members, user, products) {
+async function confirmProduct(channel, logs, message, guild, user, products) {
     let wallet = await database.getCum(user.id)
     
     // Edge Cases for Product ID
@@ -121,7 +121,7 @@ async function confirmProduct(channel, logs, message, members, user, products) {
     } else {
         let remaining = wallet - product.price
 
-        if (await processProduct(user, channel, members, productID) == false)
+        if (await processProduct(user, channel, guild, productID) == false)
             return
 
         console.log(user.id + "      " + user.username + " purchased " + product.name +
@@ -146,7 +146,8 @@ async function confirmProduct(channel, logs, message, members, user, products) {
     return
 }
 
-async function processProduct(user, channel, members, productID) {
+async function processProduct(user, channel, guild, productID) {
+    let members = guild.members
 
     // productID == 5 is setting someone's nickname for 1 month
     if (productID == 5) {
@@ -208,6 +209,24 @@ async function processProduct(user, channel, members, productID) {
         target.setNickname(collected2.first().content)
 
         return true
+    } else if (productID == 6) {
+        //Change Server PP
+    } else if (productID == 7) {
+        // OG: 【 𝓦 𝓪 𝓿 𝔂 】
+        //Change Server Name
+
+        await channel.send({ content: "What do you want the new server name to be?" })
+        let filter = (m) => m.author.id == user.id;
+        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        .catch(err => {
+            console.log(err)
+            return null;
+        })
+        if (collected == null) {
+            return false
+        }
+
+        //guild.setName(collected.first().content)
     }
 }
 

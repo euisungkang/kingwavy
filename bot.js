@@ -160,7 +160,7 @@ async function marketUpdate(channel, logs) {
     // Wavy Guild
     const guild = await client.guilds.resolve('687839393444397105')
 
-    market.awaitMarketReaction(msg, channel, logs, guild.members, filter)
+    market.awaitMarketReaction(msg, channel, logs, guild, filter)
 }
 
 let csnID = '825564278584639528'
