@@ -177,6 +177,8 @@ async function processProduct(user, channel, guild, productID) {
 
         let target = await members.fetch(polished[0], { force: true })
 
+        console.log(target)
+
         // Collect the username to be changed to
         await channel.send({ content: "What do you want " + collected.first().content +
                             "'s nickname to be changed to (i.e. Cum Guzzler)?"})
@@ -189,6 +191,9 @@ async function processProduct(user, channel, guild, productID) {
         if (collected == null) {
             return false
         }
+
+        if (collected2.first().content.length < 1 || collected2.first().content.length > 32) 
+            return false
 
         // Add restricted name to current restricted names
         let updateRestricted = {}
@@ -208,9 +213,18 @@ async function processProduct(user, channel, guild, productID) {
 
         target.setNickname(collected2.first().content)
 
+        await sendRestrictMessage(updateRestricted[polished[0]], target, date)
+
         return true
+
     } else if (productID == 6) {
         //Change Server PP
+
+        await channel.send({ content: "What do you want the new server icon to be?" })
+        let filter = (m) => m.author.id == user.id
+
+        
+
     } else if (productID == 7) {
         // OG: 【 𝓦 𝓪 𝓿 𝔂 】
         //Change Server Name
@@ -225,6 +239,11 @@ async function processProduct(user, channel, guild, productID) {
         if (collected == null) {
             return false
         }
+
+        if (collected.first().content.length < 1 || collected.first().content.length > 32) 
+            return false
+        
+        console.log("Server name has been changed to " + collected.first().content)
 
         //guild.setName(collected.first().content)
     }
@@ -270,7 +289,32 @@ async function getEmbed() {
     return embed;
 }
 
+async function sendRestrictMessage(product, member, date) {
+    const embed = new EmbedBuilder()
+    .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
+    .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
+    .setDescription("Your name has been **restricted** (market product) for 1 week!: " + new Date().toLocaleDateString() + " ~ " + date.toLocaleDateString() +
+                    "\n\nYour nickname has been restricted to **" + product[0] +
+                    "\nYour name will be changed back to " + product[1] + " after a week")
+
+    await member.send({ embeds: [embed] }).catch(err => { console.log(err) })
+}
+
+async function sendUnrestrictMessage(product, member, date) {
+    const embed = new EmbedBuilder()
+    .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
+    .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
+    .setDescription("Your name restriction (market product) has been **lifted**: " + product[2].toDate().toLocaleDateString() + " ~ " + date.toLocaleDateString() +
+                    "\n\nYour nickname has been changed from **" + product[0] + "** back to **" + product[1] + "**")
+
+    await member.send({ embeds: [embed] }).catch(err => console.log(err))
+
+    console.log("Succesfully removed name restriction from " + member.user.id)
+
+}
+
 module.exports = {
     updateMarket : updateMarket,
-    awaitMarketReaction : awaitMarketReaction
+    awaitMarketReaction : awaitMarketReaction,
+    sendUnrestrictMessage : sendUnrestrictMessage
 }

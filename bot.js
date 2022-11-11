@@ -29,11 +29,14 @@ client.on('ready', async () => {
 
     client.user.setActivity("$guide", { type: ActivityType.Listening })
 
+    // Wavy Guild
+    const wavy = await client.guilds.resolve('687839393444397105')
+
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     let mkt_channel = await client.channels.fetch('820051777650556990')
     let mkt_logs = await client.channels.fetch('1038822879787229214')
-    marketUpdate(mkt_channel, mkt_logs)
+    marketUpdate(mkt_channel, mkt_logs, wavy)
 
     //Update casinos
     //let csn_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
@@ -45,6 +48,8 @@ client.on('ready', async () => {
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel);
+
+    testRes(wavy)
 
     vote.votingSystemPP(client)
 });
@@ -59,6 +64,8 @@ client.on('messageCreate', message => {
   
     if (cmd == 'guide') {
         guideCommand(message)
+    } else if (cmd == 'test') {
+
     }
 });
 
@@ -75,6 +82,27 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     
     }
 });
+
+// Start of every day, see if anyone's restrictions are released
+cron.schedule('1 0 * * *', async () => {
+    console.log("Checking Restrictions")
+
+    let restricted = await database.getRestrictedNicknames();
+
+    let now = new Date()
+    for (const [key, value] of Object.entries(restricted)) {
+        if (value[2].toDate() < now.setDate(now.getDate())) {
+            const wavy = await client.guilds.resolve('687839393444397105')
+            let target = await wavy.members.fetch(key, { force: true }).catch(err => console.log(err))
+
+            await market.sendUnrestrictMessage(restricted[key], target, now);
+
+            delete restricted[key]
+
+            await database.updateRestrictedNicknames(restricted)
+        }
+    }
+})
 
 // cron.schedule('00 5 * * *', () => {
 //     console.log('Running cron');
@@ -151,14 +179,11 @@ async function leaderboardUpdate(channel) {
     }
 }
 
-async function marketUpdate(channel, logs) {
+async function marketUpdate(channel, logs, guild) {
     let msg = await market.updateMarket(channel);
 
     msg.react('<:HentaiCoin:814968693981184030>')
     const filter = (reaction, user) => reaction.emoji.id == '814968693981184030' && user.id != msg.author.id
-
-    // Wavy Guild
-    const guild = await client.guilds.resolve('687839393444397105')
 
     market.awaitMarketReaction(msg, channel, logs, guild, filter)
 }
