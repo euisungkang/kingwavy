@@ -49,8 +49,6 @@ client.on('ready', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel);
 
-    testRes(wavy)
-
     vote.votingSystemPP(client)
 });
 
@@ -87,20 +85,26 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 cron.schedule('1 0 * * *', async () => {
     console.log("Checking Restrictions")
 
-    let restricted = await database.getRestrictedNicknames();
+    let nicknames = await database.getRestrictedNicknames();
+    let servername = await database.getRestrictedServerName();
 
     let now = new Date()
-    for (const [key, value] of Object.entries(restricted)) {
+    for (const [key, value] of Object.entries(nicknames)) {
         if (value[2].toDate() < now.setDate(now.getDate())) {
             const wavy = await client.guilds.resolve('687839393444397105')
             let target = await wavy.members.fetch(key, { force: true }).catch(err => console.log(err))
 
-            await market.sendUnrestrictMessage(restricted[key], target, now);
+            await market.sendUnrestrictMessage(nicknames[key], target, now);
 
-            delete restricted[key]
+            delete nicknames[key]
 
-            await database.updateRestrictedNicknames(restricted)
+            await database.updateRestrictedNicknames(nicknames)
         }
+    }
+
+    if (Object.keys(servername).length != 0 && (Object.values(servername)[0])[2].toDate() < now.setDate(now.getDate())) {
+        //STUB
+        return
     }
 })
 

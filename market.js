@@ -192,8 +192,10 @@ async function processProduct(user, channel, guild, productID) {
             return false
         }
 
-        if (collected2.first().content.length < 1 || collected2.first().content.length > 32) 
+        if (collected2.first().content.length < 1 || collected2.first().content.length > 32) {
+            channel.send({ content: "Nicknames must be within 1 - 32 characters long" })
             return false
+        }
 
         // Add restricted name to current restricted names
         let updateRestricted = {}
@@ -229,7 +231,16 @@ async function processProduct(user, channel, guild, productID) {
         // OG: 【 𝓦 𝓪 𝓿 𝔂 】
         //Change Server Name
 
-        await channel.send({ content: "What do you want the new server name to be?" })
+        let restricted = await database.getRestrictedServerName();
+
+        // If someone else already changed the server name
+        if (restricted.hasOwnProperty(user.id)) {
+            await channel.send({ content: "Seems like " + user.username + " already changed the server name to " +  restricted[user.id][1] +
+                                            "\n\n Try again after: " + restricted[user.id][2].toLocaleDateString()})
+            return false
+        }
+
+        await channel.send({ content: "What do you want the new server name to be (1 week)?" })
         let filter = (m) => m.author.id == user.id;
         let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
         .catch(err => {
@@ -240,12 +251,26 @@ async function processProduct(user, channel, guild, productID) {
             return false
         }
 
-        if (collected.first().content.length < 1 || collected.first().content.length > 32) 
+        if (collected.first().content.length < 1 || collected.first().content.length > 32) {
+            await channel.send({ content: "Server name must be within 1 - 32 characters long "})
             return false
-        
-        console.log("Server name has been changed to " + collected.first().content)
+        }
 
-        //guild.setName(collected.first().content)
+        let date = new Date()
+        date.setDate(date.getDate() + 7)
+        date.setUTCHours(0,0,0,0)
+
+        let updateRestricted = {}
+
+        updateRestricted[user.id] = [collected.first().content, guild.name, date]
+
+        updateRestricted = Object.assign(restricted, updateRestricted)
+
+        await database.updateRestrictedServerName(updateRestricted)
+
+        guild.setName(collected.first().content)
+
+        console.log("Server name has been changed to " + collected.first().content)
     }
 }
 

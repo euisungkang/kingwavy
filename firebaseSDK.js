@@ -152,7 +152,26 @@ async function updateRestrictedNicknames(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Restricted Names")
+        console.log("Document written successfully: Restricted Nicknames")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function getRestrictedServerName() {
+    let userDB = db.collection('market').doc('servername')
+    let doc = await userDB.get()
+
+    return doc.data().restricted
+}
+
+async function updateRestrictedServerName(res) {
+    let userDB = db.collection('market').doc('servername')
+
+    await userDB.update({
+        restricted: res
+    }).then(() => {
+        console.log("Document written succesfully: Server Name")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -167,5 +186,7 @@ module.exports = {
     removeCurrency : removeCurrency,
     removeCum : removeCum,
     getRestrictedNicknames : getRestrictedNicknames,
-    updateRestrictedNicknames : updateRestrictedNicknames
+    updateRestrictedNicknames : updateRestrictedNicknames,
+    getRestrictedServerName : getRestrictedServerName,
+    updateRestrictedServerName : updateRestrictedServerName,
 }
