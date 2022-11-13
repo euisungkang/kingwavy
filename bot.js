@@ -103,8 +103,14 @@ cron.schedule('1 0 * * *', async () => {
     }
 
     if (Object.keys(servername).length != 0 && (Object.values(servername)[0])[2].toDate() < now.setDate(now.getDate())) {
-        //STUB
-        return
+        const wavy = await client.guilds.resolve('687839393444397105')
+        wavy.setName((Object.values(servername)[0])[1])
+
+        delete servername[Object.keys(servername)[0]]
+
+        await database.updateRestrictedServerName(servername)
+
+        console.log("Server name has been changed back to " + (Object.values(servername)[0])[1])
     }
 })
 

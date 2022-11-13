@@ -235,8 +235,8 @@ async function processProduct(user, channel, guild, productID) {
 
         // If someone else already changed the server name
         if (restricted.hasOwnProperty(user.id)) {
-            await channel.send({ content: "Seems like " + user.username + " already changed the server name to " +  restricted[user.id][1] +
-                                            "\n\n Try again after: " + restricted[user.id][2].toLocaleDateString()})
+            await channel.send({ content: "Seems like " + user.username + " already changed the server name to " +  restricted[user.id][0] +
+                                            "\n\n Try again after: " + (restricted[user.id])[2].toDate().toLocaleDateString()})
             return false
         }
 
