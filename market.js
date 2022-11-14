@@ -60,15 +60,11 @@ async function productPurchase(user, channel, logs, guild) {
     let filter = (m) => m.author.id == user.id;
 
     //What product does the user want to buy?
-    let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
-    .catch(err => {
-        return null;
-    })
-    if (collected == null) {
+    let productID = await awaitResponse(channel, filter, 30000, false)
+    if (productID == false)
         return
-    }
             
-    await confirmProduct(channel, logs, collected, guild, user, products)
+    await confirmProduct(channel, logs, productID, guild, user, products)
 
     const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
     await wait(5000);
@@ -78,15 +74,15 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     let wallet = await database.getCum(user.id)
     
     // Edge Cases for Product ID
-    if (isNaN(message.first().content)) {
+    if (isNaN(message)) {
         return await channel.send({ content: "Please enter a valid number <:PepeKindaCringe:815507957935898654>" })
-    } else if (Number(message.first().content) % 1.0 != 0.0) {
+    } else if (Number(message) % 1.0 != 0.0) {
         return await channel.send({ content: "Why the decimals? Want me to decimate your wallet bish?" })
-    } else if (Number(message.first().content) < 0) {
+    } else if (Number(message) < 0) {
         return await channel.send({ content: "idk chief, something doesn't seem right here eh?" })
     }
 
-    let productID = Number(message.first().content)
+    let productID = Number(message)
 
     // After Input Verification, Check if ID is valid
     if (productID <= 0 || productID > products.length) {
@@ -109,7 +105,7 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     confirmation.react('✅')
     confirmation.react('❌')
     
-    const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id == message.first().author.id
+    const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != '813021543998554122'
     let reaction = await confirmation.awaitReactions({filter, max: 1 })
 
     let emoji = reaction.first().emoji.name
@@ -121,7 +117,7 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     } else {
         let remaining = wallet - product.price
 
-        if (await processProduct(user, channel, guild, productID) == false)
+        if (await processProduct(user, channel, logs, guild, productID) == false)
             return
 
         console.log(user.id + "      " + user.username + " purchased " + product.name +
@@ -146,32 +142,78 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     return
 }
 
-async function processProduct(user, channel, guild, productID) {
+async function processProduct(user, channel, logs, guild, productID) {
     let members = guild.members
 
+    if (productID == 1) {
+        //Custom Role Tier 1
+    } else if (productID == 2) {
+        //Custom Role Tier 2
+    } else if (productID == 3) {
+        //Custom Role Tier 3
+    } else if (productID == 4) {
+        //Badge/Title
+        await channel.send({ content: "What do you want your custom badge to be called?\n*Badges are displayed on your profile like a role, but won't affect the way you're displayed in the server*" })
+
+        let filter = (m) => m.author.id == user.id;
+        let badgeName = await awaitResponse(channel, filter, 30000, true);
+        if (badgeName == false)
+            return false
+        
+        await channel.send({ content: "Your badge will be called: " + badgeName + 
+                                      "\n\nNow pick your badge's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
+                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/> \n"})
+
+        let badgeColor = await awaitResponse(channel, filter, 90000, false);
+        if (badgeColor == false)
+            return false;
+
+        // Check if badgeColor is a valid hex code
+        if (/^#[0-9A-F]{6}$/i.test(badgeColor) || /^[0-9A-F]{6}$/i.test(badgeColor)) {
+            if (/^[0-9A-F]{6}$/i.test(badgeColor))
+                badgeColor = "#" + badgeColor
+        } else {
+            await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+            return false;
+        }
+
+        // STUB: Add support for Role Icons
+
+        let badge = await guild.roles.create({
+            name: badgeName,
+            color: badgeColor,
+            hoist: false,
+            permissions: [],
+            position: 0,
+            mentionable: true,
+            
+        })
+
+        let target = await members.fetch(user.id, { force: true })
+        target.roles.add(badge)
+
+        console.log("Badge has been created for " + user.username + " called " + badgeName +
+                    "\nBadge Color: " + badgeColor)
+
+        return true
+
     // productID == 5 is setting someone's nickname for 1 month
-    if (productID == 5) {
+    } else if (productID == 5) {
         let restricted = await database.getRestrictedNicknames();
 
         // Collect the user whose nickname is to be changed
         await channel.send({ content: "@ the person you want to apply the nickname change (i.e. <@812904867462643713>)\nThey will not be able to change their nickname for a month" })
 
         let filter = (m) => m.author.id == user.id;
+        let targetName = await awaitResponse(channel, filter, 30000, false)
+        if (targetName == false)
+            return false;
 
-        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
-        .catch(err => {
-            console.log(err)
-            return null;
-        })
-        if (collected == null) {
-            return false
-        }
-
-        let polished = (collected.first().content).match(/(\d+)/)
+        let polished = (targetName).match(/(\d+)/)
 
         if (restricted.hasOwnProperty(polished[0])) {
-            await channel.send({ content: "Seems like " + collected.first().content + " is already a target.\n" +
-                                "Either pick someone else, or try again after " + collected.first().content + "'s restriction is lifted"})
+            await channel.send({ content: "Seems like " + targetName + " is already a target.\n" +
+                                "Either pick someone else, or try again after " + targetName + "'s restriction is lifted"})
             return false
         }
 
@@ -180,22 +222,12 @@ async function processProduct(user, channel, guild, productID) {
         console.log(target)
 
         // Collect the username to be changed to
-        await channel.send({ content: "What do you want " + collected.first().content +
+        await channel.send({ content: "What do you want " + targetName +
                             "'s nickname to be changed to (i.e. Cum Guzzler)?"})
 
-        let collected2 = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
-        .catch(err => {
-            console.log(err)
-            return null
-        })
-        if (collected == null) {
+        let targetRestrictedName = await awaitResponse(channel, filter, 30000, true)
+        if (targetRestrictedName == false)
             return false
-        }
-
-        if (collected2.first().content.length < 1 || collected2.first().content.length > 32) {
-            channel.send({ content: "Nicknames must be within 1 - 32 characters long" })
-            return false
-        }
 
         // Add restricted name to current restricted names
         let updateRestricted = {}
@@ -205,7 +237,7 @@ async function processProduct(user, channel, guild, productID) {
         date.setDate(date.getDate() + 7)
         date.setUTCHours(0,0,0,0)
 
-        updateRestricted[polished[0]] = [collected2.first().content, target.nickname, date]
+        updateRestricted[polished[0]] = [targetRestrictedName, target.nickname, date]
 
         updateRestricted = Object.assign(restricted, updateRestricted)
 
@@ -213,7 +245,7 @@ async function processProduct(user, channel, guild, productID) {
 
         database.updateRestrictedNicknames(updateRestricted)
 
-        target.setNickname(collected2.first().content)
+        target.setNickname(targetRestrictedName)
 
         await sendRestrictMessage(updateRestricted[polished[0]], target, date)
 
@@ -223,9 +255,13 @@ async function processProduct(user, channel, guild, productID) {
         //Change Server PP
 
         await channel.send({ content: "What do you want the new server icon to be?" })
-        let filter = (m) => m.author.id == user.id
 
-        
+        let filter = (m) => m.author.id == user.id
+        let serverIcon = await awaitResponse(channel, filter, 90000, false)
+        if (serverIcon == false)
+            return false
+
+        return true
 
     } else if (productID == 7) {
         // OG: 【 𝓦 𝓪 𝓿 𝔂 】
@@ -241,20 +277,11 @@ async function processProduct(user, channel, guild, productID) {
         }
 
         await channel.send({ content: "What do you want the new server name to be (1 week)?" })
-        let filter = (m) => m.author.id == user.id;
-        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
-        .catch(err => {
-            console.log(err)
-            return null;
-        })
-        if (collected == null) {
-            return false
-        }
 
-        if (collected.first().content.length < 1 || collected.first().content.length > 32) {
-            await channel.send({ content: "Server name must be within 1 - 32 characters long "})
+        let filter = (m) => m.author.id == user.id;
+        let serverName = await awaitResponse(channel, filter, 30000, true)
+        if (serverName == false)
             return false
-        }
 
         let date = new Date()
         date.setDate(date.getDate() + 7)
@@ -262,15 +289,17 @@ async function processProduct(user, channel, guild, productID) {
 
         let updateRestricted = {}
 
-        updateRestricted[user.id] = [collected.first().content, guild.name, date]
+        updateRestricted[user.id] = [serverName, guild.name, date]
 
         updateRestricted = Object.assign(restricted, updateRestricted)
 
         await database.updateRestrictedServerName(updateRestricted)
 
-        guild.setName(collected.first().content)
+        guild.setName(serverName)
 
-        console.log("Server name has been changed to " + collected.first().content)
+        console.log("Server name has been changed to " + serverName)
+
+        return true
     }
 }
 
@@ -314,6 +343,24 @@ async function getEmbed() {
     return embed;
 }
 
+async function awaitResponse(channel, filter, time, charLimit) {
+    let collected = await channel.awaitMessages({ filter, max: 1, time: time, errors: ['time'] })
+    .catch(err => {
+        console.log(err)
+        return null;
+    })
+    if (collected == null) {
+        return false
+    } 
+    
+    if (charLimit && (collected.first().content.length < 1 || collected.first().content.length > 32)) {
+        channel.send({ content: "Nicknames must be within 1 - 32 characters long" })
+        return false
+    }
+
+    return collected.first().content
+}
+
 async function sendRestrictMessage(product, member, date) {
     const embed = new EmbedBuilder()
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
@@ -335,7 +382,6 @@ async function sendUnrestrictMessage(product, member, date) {
     await member.send({ embeds: [embed] }).catch(err => console.log(err))
 
     console.log("Succesfully removed name restriction from " + member.user.id)
-
 }
 
 module.exports = {
