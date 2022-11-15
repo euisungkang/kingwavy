@@ -177,6 +177,25 @@ async function updateRestrictedServerName(res) {
     })
 }
 
+async function getRestrictedServerIcon() {
+    let userDB = db.collection('market').doc('servericon')
+    let doc = await userDB.get()
+
+    return doc.data().restricted
+}
+
+async function updateRestrictedServerIcon(res) {
+    let userDB = db.collection('market').doc('servericon')
+
+    await userDB.update({
+        restricted: res
+    }).then(() => {
+        console.log("Document written succesfully: Server Icon")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 module.exports = {
     getTopWallets : getTopWallets,
     getProducts : getProducts,
@@ -189,4 +208,6 @@ module.exports = {
     updateRestrictedNicknames : updateRestrictedNicknames,
     getRestrictedServerName : getRestrictedServerName,
     updateRestrictedServerName : updateRestrictedServerName,
+    getRestrictedServerIcon : getRestrictedServerIcon,
+    updateRestrictedServerIcon : updateRestrictedServerIcon,
 }

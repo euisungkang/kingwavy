@@ -254,12 +254,60 @@ async function processProduct(user, channel, logs, guild, productID) {
     } else if (productID == 6) {
         //Change Server PP
 
-        await channel.send({ content: "What do you want the new server icon to be?" })
+        // If someone already purchased product 6
+        let restrictedIcon = await database.getRestrictedServerIcon()
+        if (restrictedIcon.hasOwnProperty(user.id)) {
+            await channel.send({ content: "Seems like someone already changed the server's icon for a week\n" +
+                                          "Try again after " + (restricted[user.id])[2].toDate().toLocaleDateString() })
+            return false
+        }
+
+        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are strictly **512x512** pixels and **8MB** max size" +
+                                      "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://www.simpleimageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>" })
 
         let filter = (m) => m.author.id == user.id
-        let serverIcon = await awaitResponse(channel, filter, 90000, false)
-        if (serverIcon == false)
+        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        .catch(err => {
+            console.log(err)
+            return null;
+        })
+        if (collected == null)
             return false
+
+        let serverIcon = collected.first().attachments.values().next().value
+
+        console.log(serverIcon)
+        
+        // Conditions for dimension and file size of server icon
+        if (serverIcon.height != 512 && serverIcon.width != 512) {
+            await channel.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
+                                          "The image you uploaded has dimensions of " + serverIcon.width + "x" + serverIcon.height +
+                                          "\n\nResize your image with Image Resizer: <https://www.simpleimageresizer.com/>"})
+            return false
+        } else if (serverIcon.size >= 8000000) {
+            await channel.send({ content: "The server icon size **must** be **less than 8MB**" +
+                                          "The image you uploaded is of size " + Math.trunc(serverIcon.size/1000000) +
+                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+            return false
+        }
+        
+        let updateRestricted = {}
+
+        let date = new Date()
+        date.setDate(date.getDate() + 7)
+        date.setUTCHours(0,0,0,0)
+
+        let currentIcon = await guild.iconURL({ dynamic: true })
+
+        updateRestricted[user.id] = [serverIcon.url, currentIcon, date]
+
+        console.log(updateRestricted)
+
+        //STUB: URL Icon does not outlast the switch. Consider buffer support or local file
+
+        await database.updateRestrictedServerIcon(updateRestricted)
+
+        await guild.setIcon(serverIcon.url)
 
         return true
 
@@ -309,7 +357,8 @@ async function deleteAll(channel) {
         let fetched = await channel.messages.fetch({ limit: 100 })
         filtered = fetched.filter(msg => msg.id != '824832401996906538')
         //console.log(filtered)
-        channel.bulkDelete(filtered)
+        if (filtered.size > 0)
+            channel.bulkDelete(filtered)
     } while(filtered.size >= 2)
 }
 
