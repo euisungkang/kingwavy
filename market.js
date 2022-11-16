@@ -1,6 +1,8 @@
 const { EmbedBuilder } = require('discord.js');
 const { getProducts } = require('./firebaseSDK');
 const database = require('./firebaseSDK');
+const fs = require('fs');
+const axios = require('axios')
 
 let mktID = '824832401996906538'
 
@@ -9,6 +11,9 @@ async function updateMarket(channel) {
     //channel.send({ content: {files: ['https://i.ibb.co/FXbw7wp/Wavy-store.jpg']})
     //channel.send({ content: "Welcome to the 【 𝓦 𝓪 𝓿 𝔂 】 market.\n\nIn the market, you will be able to spend your :HentaiCoin: to buy any of the server perks you want, whenever you want.\n\n**Click the <:HentaiCoin:814968693981184030> reaction, and we'll attend you.**\n\n__**Market Status: **__")
     //channel.send({ content: "__**Market Status: **__\n```diff\n- Currently Offline. Under Maintenance, there will be more products added soon.\n```")
+
+    let base64Stream = await downloadIcon('https://cdn.discordapp.com/icons/687839393444397105/a_02a45cf597e37f202e5d0f100e72a2bd.gif')
+    console.log(base64Stream)
 
     let embed = await getEmbed();
 
@@ -303,11 +308,20 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         console.log(updateRestricted)
 
+        // Download current server icon as a local file in /media
+        // await request.get(currentIcon).catch(err => console.log(err))
+        // .on('response', res => {
+        //     if(res.statusCode == 200)
+        //         console.log("Successfully saved original server icon")})
+        // .pipe(fs.createWriteStream('./media' + filename));
+        let base64Stream = await downloadIcon(currentIcon)
+        console.log(base64Stream)
+
         //STUB: URL Icon does not outlast the switch. Consider buffer support or local file
 
-        await database.updateRestrictedServerIcon(updateRestricted)
+        // await database.updateRestrictedServerIcon(updateRestricted)
 
-        await guild.setIcon(serverIcon.url)
+        // await guild.setIcon(serverIcon.url)
 
         return true
 
@@ -432,6 +446,16 @@ async function sendUnrestrictMessage(product, member, date) {
 
     console.log("Succesfully removed name restriction from " + member.user.id)
 }
+
+async function downloadIcon(url) {
+    return await axios
+    .get(url, {
+        responseType: 'arraybuffer'
+    })
+    .then(response => {
+        Buffer.from(response.data, 'binary').toString('base64')
+    })
+  }
 
 module.exports = {
     updateMarket : updateMarket,
