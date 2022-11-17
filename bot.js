@@ -24,17 +24,11 @@ client.login(process.env.BOT_TOKEN_KW)
 client.on('ready', async () => {
     console.log("help pls oh god")
 
-    //test()
-
-    // let test = await client.users.fetch('237018129664966656')
-    // console.log(test)
-
     client.user.setActivity("$guide", { type: ActivityType.Listening })
 
     // Wavy Guild
     const wavy = await client.guilds.resolve('687839393444397105')
-    //wavy.setIcon('https://cdn.discordapp.com/icons/687839393444397105/a_02a45cf597e37f202e5d0f100e72a2bd.gif')
-    console.log(await wavy.iconURL({dynamic: true}))
+
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     let mkt_channel = await client.channels.fetch('820051777650556990')
@@ -109,20 +103,23 @@ async function test() {
         const wavy = await client.guilds.resolve('687839393444397105')
         wavy.setName((Object.values(servername)[0])[1])
 
+        console.log("Server name has been changed back to " + (Object.values(servername)[0])[1])
+
         delete servername[Object.keys(servername)[0]]
 
         await database.updateRestrictedServerName(servername)
 
-        console.log("Server name has been changed back to " + (Object.values(servername)[0])[1])
+
     }
 
     if (Object.keys(servericon).length != 0 && (Object.values(servericon)[0])[2].toDate() < now.setDate(now.getDate())) {
         const wavy = await client.guilds.resolve('687839393444397105')
-        wavy.setIcon((Object.value))
+        wavy.setIcon((Object.values(servericon)[0])[1])
+
+        console.log("Server icon has been changed back")
+
         delete servericon[Object.keys(servericon)[0]]
         await database.updateRestrictedServerIcon(servericon)
-
-        console.log("Server icon has been changed back to " + (Object.values(servername)[0])[1])
     }
 }
 
@@ -163,9 +160,9 @@ cron.schedule('1 0 * * *', async () => {
 
     if (Object.keys(servericon).length != 0 && (Object.values(servericon)[0])[2].toDate() < now.setDate(now.getDate())) {
         const wavy = await client.guilds.resolve('687839393444397105')
-        wavy.setIcon((Object.value))
+        wavy.setIcon((Object.values(servericon)[0])[1])
 
-        console.log("Server icon has been changed back to " + (Object.values(servername)[0])[1])
+        console.log("Server icon has been changed back")
 
         delete servericon[Object.keys(servericon)[0]]
         await database.updateRestrictedServerIcon(servericon)

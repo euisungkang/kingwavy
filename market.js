@@ -1,10 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { getProducts } = require('./firebaseSDK');
 const database = require('./firebaseSDK');
-const fs = require('fs');
 const axios = require('axios')
-
-let mktID = '824832401996906538'
 
 async function updateMarket(channel) {
     console.log("updating market");
@@ -12,10 +9,8 @@ async function updateMarket(channel) {
     //channel.send({ content: "Welcome to the 【 𝓦 𝓪 𝓿 𝔂 】 market.\n\nIn the market, you will be able to spend your :HentaiCoin: to buy any of the server perks you want, whenever you want.\n\n**Click the <:HentaiCoin:814968693981184030> reaction, and we'll attend you.**\n\n__**Market Status: **__")
     //channel.send({ content: "__**Market Status: **__\n```diff\n- Currently Offline. Under Maintenance, there will be more products added soon.\n```")
 
-    let base64Stream = await downloadIcon('https://cdn.discordapp.com/icons/687839393444397105/a_02a45cf597e37f202e5d0f100e72a2bd.gif')
-    console.log(base64Stream)
-
     let embed = await getEmbed();
+    let mktID = await database.getMarketMessage()
 
     let exists = true;
     try {
@@ -27,7 +22,7 @@ async function updateMarket(channel) {
         if (!exists) {
             let msg = await channel.send({ embeds: [embed] })
             msg.react('<:HentaiCoin:814968693981184030>')
-            mktID = msg.id
+            database.updateMarketMessage(msg.id)
             return msg;
         } else {
             let msg = await channel.messages.fetch(mktID)
@@ -150,12 +145,72 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
 async function processProduct(user, channel, logs, guild, productID) {
     let members = guild.members
 
-    if (productID == 1) {
+    if (productID >= 1 && productID <= 3) {
         //Custom Role Tier 1
-    } else if (productID == 2) {
         //Custom Role Tier 2
-    } else if (productID == 3) {
         //Custom Role Tier 3
+
+        await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
+    
+        let filter = (m) => m.author.id == user.id
+        let roleName = await awaitResponse(channel, filter, 30000, true);
+        if (roleName == false)
+            return false
+
+        await channel.send({ content: "Your role will be called " + roleName +
+                                      "\n\nNow pick your role's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
+                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
+
+        let roleColor = await awaitResponse(channel, filter, 90000, false)
+        if (roleColor == false)
+            return false
+        
+        // Check if roleColor is a valid hex code
+        if (/^#[0-9A-F]{6}$/i.test(roleColor) || /^[0-9A-F]{6}$/i.test(roleColor)) {
+            if (/^[0-9A-F]{6}$/i.test(roleColor))
+                roleColor = "#" + roleColor
+        } else {
+            await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+            return false;
+        }
+
+        // Configure pos based on tier of product
+        let pos
+        if (productID == 1) {
+            //Wavy Role
+            let wavyRole = await guild.roles.fetch('687840476744908815')
+            pos = wavyRole.rawPosition - 1
+
+        } else if (productID == 2) {
+            //Groovy Role
+            let groovyRole = await guild.roles.fetch('812983666136842241')
+            pos = groovyRole.rawPosition - 1
+
+        } else {
+            // Aesthetic Role
+            let aesthethicRole = await guild.roles.fetch('812926342249185320')
+            pos = aesthethicRole.rawPosition - 1
+
+        }
+
+        let role = await guild.roles.create({
+            name: roleName,
+            color: roleColor,
+            hoist: true,
+            permissions: [],
+            position: pos,
+            mentionable: true,
+            
+        })
+
+        let target = await members.fetch(user.id, { force: true })
+        target.roles.add(role)
+
+        console.log("Tier " + productID + " role has been created for " + user.username + " called " + roleName +
+        "\nBadge Color: " + roleColor)
+
+        return true
+
     } else if (productID == 4) {
         //Badge/Title
         await channel.send({ content: "What do you want your custom badge to be called?\n*Badges are displayed on your profile like a role, but won't affect the way you're displayed in the server*" })
@@ -167,7 +222,7 @@ async function processProduct(user, channel, logs, guild, productID) {
         
         await channel.send({ content: "Your badge will be called: " + badgeName + 
                                       "\n\nNow pick your badge's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
-                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/> \n"})
+                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
 
         let badgeColor = await awaitResponse(channel, filter, 90000, false);
         if (badgeColor == false)
@@ -202,7 +257,7 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         return true
 
-    // productID == 5 is setting someone's nickname for 1 month
+    // productID == 5 is setting someone's nickname for 1 week
     } else if (productID == 5) {
         let restricted = await database.getRestrictedNicknames();
 
@@ -263,12 +318,12 @@ async function processProduct(user, channel, logs, guild, productID) {
         let restrictedIcon = await database.getRestrictedServerIcon()
         if (restrictedIcon.hasOwnProperty(user.id)) {
             await channel.send({ content: "Seems like someone already changed the server's icon for a week\n" +
-                                          "Try again after " + (restricted[user.id])[2].toDate().toLocaleDateString() })
+                                          "Try again after " + (restrictedIcon[user.id])[2].toDate().toLocaleDateString() })
             return false
         }
 
         await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are strictly **512x512** pixels and **8MB** max size" +
-                                      "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://www.simpleimageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>" })
+                                      "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
 
         let filter = (m) => m.author.id == user.id
         let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
@@ -281,13 +336,11 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         let serverIcon = collected.first().attachments.values().next().value
 
-        console.log(serverIcon)
-        
         // Conditions for dimension and file size of server icon
         if (serverIcon.height != 512 && serverIcon.width != 512) {
             await channel.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
                                           "The image you uploaded has dimensions of " + serverIcon.width + "x" + serverIcon.height +
-                                          "\n\nResize your image with Image Resizer: <https://www.simpleimageresizer.com/>"})
+                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
             return false
         } else if (serverIcon.size >= 8000000) {
             await channel.send({ content: "The server icon size **must** be **less than 8MB**" +
@@ -302,26 +355,15 @@ async function processProduct(user, channel, logs, guild, productID) {
         date.setDate(date.getDate() + 7)
         date.setUTCHours(0,0,0,0)
 
+        // Save current Icon as a base 64 image
         let currentIcon = await guild.iconURL({ dynamic: true })
-
-        updateRestricted[user.id] = [serverIcon.url, currentIcon, date]
-
-        console.log(updateRestricted)
-
-        // Download current server icon as a local file in /media
-        // await request.get(currentIcon).catch(err => console.log(err))
-        // .on('response', res => {
-        //     if(res.statusCode == 200)
-        //         console.log("Successfully saved original server icon")})
-        // .pipe(fs.createWriteStream('./media' + filename));
         let base64Stream = await downloadIcon(currentIcon)
-        console.log(base64Stream)
+        
+        updateRestricted[user.id] = [serverIcon.url, base64Stream, date]
 
-        //STUB: URL Icon does not outlast the switch. Consider buffer support or local file
+        await database.updateRestrictedServerIcon(updateRestricted)
 
-        // await database.updateRestrictedServerIcon(updateRestricted)
-
-        // await guild.setIcon(serverIcon.url)
+        await guild.setIcon(serverIcon.url)
 
         return true
 
@@ -368,8 +410,9 @@ async function processProduct(user, channel, logs, guild, productID) {
 async function deleteAll(channel) {
     let filtered;
     do {
+        let mktID = await database.getMarketMessage()
         let fetched = await channel.messages.fetch({ limit: 100 })
-        filtered = fetched.filter(msg => msg.id != '824832401996906538')
+        filtered = fetched.filter(msg => msg.id != mktID)
         //console.log(filtered)
         if (filtered.size > 0)
             channel.bulkDelete(filtered)
@@ -447,15 +490,15 @@ async function sendUnrestrictMessage(product, member, date) {
     console.log("Succesfully removed name restriction from " + member.user.id)
 }
 
-async function downloadIcon(url) {
-    return await axios
-    .get(url, {
-        responseType: 'arraybuffer'
-    })
-    .then(response => {
-        Buffer.from(response.data, 'binary').toString('base64')
-    })
-  }
+function downloadIcon(url) {
+    return axios
+        .get(url, {
+            responseType: 'arraybuffer'
+        })
+        .then(
+            response => Buffer.from(response.data, 'base64')
+        )
+}
 
 module.exports = {
     updateMarket : updateMarket,

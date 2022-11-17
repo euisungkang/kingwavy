@@ -8,6 +8,29 @@ admin.initializeApp({
 
 let db = admin.firestore();
 
+async function getMarketMessage() {
+    let meta = await db.collection('market').doc('meta')
+
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().message
+
+    return false
+}
+
+async function updateMarketMessage(msg) {
+    let meta = await db.collection('market').doc('meta')
+
+    await meta.update({
+        message: msg
+    }).then(() => {
+        console.log("Document written successfully: Market Message");
+    }).catch(err => {
+        console.log("Error: " + err);
+    })
+}
+
 async function getTopWallets() {
     const wallets = await db.collection('wallets').get();
     let walletmap = new Map();
@@ -197,6 +220,8 @@ async function updateRestrictedServerIcon(res) {
 }
 
 module.exports = {
+    getMarketMessage : getMarketMessage,
+    updateMarketMessage : updateMarketMessage,
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,
