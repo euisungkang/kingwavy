@@ -219,6 +219,44 @@ async function updateRestrictedServerIcon(res) {
     })
 }
 
+async function updateBadges(id, name, color) {
+    let userDB = db.collection('market')
+    let badgeDB = userDB.doc('badges')
+
+    const doc = await badgeDB.get()
+
+    let badges = await doc.data()
+
+    if (!badges.hasOwnProperty(id)) {
+        let newBadge = {
+            name: name,
+            color: color,
+        }
+        badges[id] = newBadge
+
+ 
+    }
+
+    await badgeDB.update({
+        badges: badges
+    }).then(() => {
+        console.log("Document written succesfully: Server Icon")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+
+    console.log(badges)
+    console.log(typeof badges)
+}
+
+async function updateRoles() {
+
+}
+
+async function getAllSubscriptions() {
+    let userDB = db.collection('market')
+}
+
 module.exports = {
     getMarketMessage : getMarketMessage,
     updateMarketMessage : updateMarketMessage,
@@ -229,6 +267,8 @@ module.exports = {
     addCurrency : addCurrency,
     removeCurrency : removeCurrency,
     removeCum : removeCum,
+    updateBadges : updateBadges,
+    updateRoles : updateRoles,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,
     getRestrictedServerName : getRestrictedServerName,

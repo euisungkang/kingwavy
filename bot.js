@@ -59,8 +59,10 @@ client.on('messageCreate', message => {
   
     if (cmd == 'guide') {
         guideCommand(message)
+    } else if (cmd == 'edit') {
+        editCommand(message)
     } else if (cmd == 'test') {
-
+        database.updateBadges(0, "", 0)
     }
 });
 
@@ -201,6 +203,24 @@ async function guideCommand(msg) {
     });
 
     return await replyChannel.send({ embeds: [embed] })
+}
+
+async function editCommand(msg) {
+    console.log(msg.author.id)
+
+    let replyChannel = await client.channels.fetch(msg.channel.id)
+    replyChannel.send({ content: "Check your DMs <@" + msg.author.id + ">\n" + 
+                                "Your editable <#820051777650556990> features were sent by me" })
+
+    let embed = new EmbedBuilder()
+    .setColor('#ff6ad5')
+    .setTitle('【 𝓦 𝓪 𝓿 𝔂 】 $edit command')
+    .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
+    .addFields(
+        { name: ""}
+    )
+
+    msg.author.send({ content: "" })
 }
 
 let ldbIDCurr = '966719668117209129'

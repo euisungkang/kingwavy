@@ -255,6 +255,8 @@ async function processProduct(user, channel, logs, guild, productID) {
         console.log("Badge has been created for " + user.username + " called " + badgeName +
                     "\nBadge Color: " + badgeColor)
 
+        database.updateBadges(user.id, badgeName, badgeColor)
+
         return true
 
     // productID == 5 is setting someone's nickname for 1 week
