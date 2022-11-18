@@ -147,7 +147,6 @@ async function removeCum(user, amount) {
     const doc = await userDB.get()
     if (doc.exists) {
         aggregate_amount = doc.data().cum - amount;
-        console.log(doc.data())
     }
 
     await userDB.update({
@@ -194,7 +193,7 @@ async function updateRestrictedServerName(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written succesfully: Server Name")
+        console.log("Document written successfully: Server Name")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -213,48 +212,106 @@ async function updateRestrictedServerIcon(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written succesfully: Server Icon")
+        console.log("Document written successfully: Server Icon")
     }).catch(err => {
         console.log("Error: " + err)
     })
 }
 
-async function updateBadges(id, name, color) {
-    let userDB = db.collection('market')
-    let badgeDB = userDB.doc('badges')
+async function updateBadges(id, badge) {
+    let userDB = db.collection('market').doc('badges')
 
-    const doc = await badgeDB.get()
+    const doc = await userDB.get()
 
-    let badges = await doc.data()
+    let badges = await doc.data().purchased
 
-    if (!badges.hasOwnProperty(id)) {
-        let newBadge = {
-            name: name,
-            color: color,
-        }
-        badges[id] = newBadge
-
- 
+    let newBadge = {
+        id: badge.id,
+        name: badge.name,
+        color: badge.hexColor,
     }
 
-    await badgeDB.update({
+    if (!badges.hasOwnProperty(id))
+        badges[id] = [newBadge]
+    else
+        badges[Object.keys(badges)[id]].push(newBadge)
+
+    await userDB.update({
         badges: badges
     }).then(() => {
-        console.log("Document written succesfully: Server Icon")
+        console.log("Document written successfully: Custom Badge")
     }).catch(err => {
         console.log("Error: " + err)
     })
-
-    console.log(badges)
-    console.log(typeof badges)
 }
 
-async function updateRoles() {
+async function updateRoles(id, role, tier) {
+    let userDB = db.collection('market').doc('roles')
 
+    const doc = await userDB.get()
+
+    let roles = await doc.data().purchased
+
+    let newRole = {
+        id: role.id,
+        name: role.name,
+        color: role.hexColor,
+        tier: tier
+    }
+
+    if (!roles.hasOwnProperty(id))
+        roles[id] = [newRole]
+    else
+        roles[Object.keys(roles)[id]].push(newRole)
+
+    await userDB.update({
+        roles: roles
+    }).then(() => {
+        console.log("Document written successfully: Custom Role")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
 }
 
-async function getAllSubscriptions() {
+async function getAllSubscriptions(id) {
     let userDB = db.collection('market')
+    const roles = userDB.doc('roles')
+    const badges = userDB.doc('badges')
+    const nicknames = userDB.doc('nickname')
+    const serverName = userDB.doc('servername')
+    const serverIcon = userDB.doc('servericon')
+
+    let toReturn = new Map()
+
+    let doc = await roles.get()
+    let purchasedRoles = await doc.data().purchased
+    if (purchasedRoles.hasOwnProperty(id)) {
+        purchasedRoles.forEach(role => {
+            toReturn.set(role.tier, role)
+        })
+    }
+
+    doc = await badges.get()
+    let purchasedBadges = await doc.data().purchased
+    if (purchasedBadges.hasOwnProperty(id))
+        toReturn.set(4, purchasedBadges[id])
+
+    doc = await nicknames.get()
+    let restrictedNicknames = await doc.data().restricted
+    if (restrictedNicknames.hasOwnProperty(id))
+        toReturn.set(5, restrictedNicknames)
+
+    doc = await serverIcon.get()
+    let restrictedIcon = await doc.data().restricted
+    if (restrictedIcon.hasOwnProperty(id))
+        toReturn.set(6, restrictedIcon)
+
+    doc = await serverName.get()
+    let restrictedName = await doc.data().restricted
+    if (restrictedName.hasOwnProperty(id))
+        toReturn.set(7, restrictedName)
+    
+    return toReturn
 }
 
 module.exports = {
@@ -275,4 +332,5 @@ module.exports = {
     updateRestrictedServerName : updateRestrictedServerName,
     getRestrictedServerIcon : getRestrictedServerIcon,
     updateRestrictedServerIcon : updateRestrictedServerIcon,
+    getAllSubscriptions : getAllSubscriptions,
 }

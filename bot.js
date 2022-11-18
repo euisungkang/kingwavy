@@ -24,6 +24,8 @@ client.login(process.env.BOT_TOKEN_KW)
 client.on('ready', async () => {
     console.log("help pls oh god")
 
+    console.log(await database.getAllSubscriptions('237018129664966656'))
+
     client.user.setActivity("$guide", { type: ActivityType.Listening })
 
     // Wavy Guild
@@ -62,7 +64,7 @@ client.on('messageCreate', message => {
     } else if (cmd == 'edit') {
         editCommand(message)
     } else if (cmd == 'test') {
-        database.updateBadges(0, "", 0)
+        database.updateBadges(1, "", 0)
     }
 });
 
@@ -76,7 +78,6 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
             console.log(oldMember.nickname + " (" + oldMember.id + ") has changed their nickname to " + newMember.nickname)
             newMember.setNickname(restricted[newMember.id][0])
         }
-    
     }
 });
 
@@ -110,8 +111,6 @@ async function test() {
         delete servername[Object.keys(servername)[0]]
 
         await database.updateRestrictedServerName(servername)
-
-
     }
 
     if (Object.keys(servericon).length != 0 && (Object.values(servericon)[0])[2].toDate() < now.setDate(now.getDate())) {
@@ -217,10 +216,13 @@ async function editCommand(msg) {
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】 $edit command')
     .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
     .addFields(
-        { name: ""}
+        { name: "Your editable market features", value: "\u200B" }
     )
 
-    msg.author.send({ content: "" })
+    let subscriptions = await database.getAllSubscriptions(msg.author.id)
+
+
+    msg.author.send({ embeds: [embed] })
 }
 
 let ldbIDCurr = '966719668117209129'

@@ -255,7 +255,7 @@ async function processProduct(user, channel, logs, guild, productID) {
         console.log("Badge has been created for " + user.username + " called " + badgeName +
                     "\nBadge Color: " + badgeColor)
 
-        database.updateBadges(user.id, badgeName, badgeColor)
+        database.updateBadges(user.id, badge, productID)
 
         return true
 
@@ -272,6 +272,10 @@ async function processProduct(user, channel, logs, guild, productID) {
             return false;
 
         let polished = (targetName).match(/(\d+)/)
+        if (polished == null) {
+            await channel.send({ content: "Please enter a valid user :unamused:" })
+            return false
+        }
 
         if (restricted.hasOwnProperty(polished[0])) {
             await channel.send({ content: "Seems like " + targetName + " is already a target.\n" +
@@ -299,7 +303,7 @@ async function processProduct(user, channel, logs, guild, productID) {
         date.setDate(date.getDate() + 7)
         date.setUTCHours(0,0,0,0)
 
-        updateRestricted[polished[0]] = [targetRestrictedName, target.nickname, date]
+        updateRestricted[user.id] = [polished[0], targetRestrictedName, target.nickname, date]
 
         updateRestricted = Object.assign(restricted, updateRestricted)
 
@@ -309,7 +313,7 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         target.setNickname(targetRestrictedName)
 
-        await sendRestrictMessage(updateRestricted[polished[0]], target, date)
+        await sendRestrictMessage(updateRestricted[user.id], target, date)
 
         return true
 
@@ -407,6 +411,8 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         return true
     }
+
+    return false
 }
 
 async function deleteAll(channel) {
