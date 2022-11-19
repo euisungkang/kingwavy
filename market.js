@@ -209,6 +209,8 @@ async function processProduct(user, channel, logs, guild, productID) {
         console.log("Tier " + productID + " role has been created for " + user.username + " called " + roleName +
         "\nBadge Color: " + roleColor)
 
+        database.updateRoles(user.id, role, productID)
+
         return true
 
     } else if (productID == 4) {
@@ -277,15 +279,15 @@ async function processProduct(user, channel, logs, guild, productID) {
             return false
         }
 
-        if (restricted.hasOwnProperty(polished[0])) {
-            await channel.send({ content: "Seems like " + targetName + " is already a target.\n" +
-                                "Either pick someone else, or try again after " + targetName + "'s restriction is lifted"})
-            return false
+        for (const [key, value] of Object.entries(restricted)) {
+            if (value.id == polished[0]) {
+                await channel.send({ content: "Seems like " + targetName + " is already a target.\n" +
+                                    "Either pick someone else, or try again after " + targetName + "'s restriction is lifted"})
+                return false
+            }
         }
 
         let target = await members.fetch(polished[0], { force: true })
-
-        console.log(target)
 
         // Collect the username to be changed to
         await channel.send({ content: "What do you want " + targetName +
@@ -303,17 +305,20 @@ async function processProduct(user, channel, logs, guild, productID) {
         date.setDate(date.getDate() + 7)
         date.setUTCHours(0,0,0,0)
 
-        updateRestricted[user.id] = [polished[0], targetRestrictedName, target.nickname, date]
+        updateRestricted[user.id] = {
+            id: polished[0],
+            newNickname: targetRestrictedName,
+            oldNickname: target.nickname,
+            date: date
+        }
 
         updateRestricted = Object.assign(restricted, updateRestricted)
-
-        console.log(updateRestricted)
 
         database.updateRestrictedNicknames(updateRestricted)
 
         target.setNickname(targetRestrictedName)
 
-        await sendRestrictMessage(updateRestricted[user.id], target, date)
+        await sendRestrictMessage(updateRestricted[user.id], target)
 
         return true
 
@@ -365,7 +370,11 @@ async function processProduct(user, channel, logs, guild, productID) {
         let currentIcon = await guild.iconURL({ dynamic: true })
         let base64Stream = await downloadIcon(currentIcon)
         
-        updateRestricted[user.id] = [serverIcon.url, base64Stream, date]
+        updateRestricted[user.id] = {
+            newIcon: serverIcon.url,
+            oldIcon: base64Stream,
+            date: date
+        }
 
         await database.updateRestrictedServerIcon(updateRestricted)
 
@@ -399,7 +408,11 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         let updateRestricted = {}
 
-        updateRestricted[user.id] = [serverName, guild.name, date]
+        updateRestricted[user.id] = {
+            newName: serverName,
+            oldName: guild.name,
+            date: date
+        }
 
         updateRestricted = Object.assign(restricted, updateRestricted)
 
@@ -475,23 +488,23 @@ async function awaitResponse(channel, filter, time, charLimit) {
     return collected.first().content
 }
 
-async function sendRestrictMessage(product, member, date) {
+async function sendRestrictMessage(product, member) {
     const embed = new EmbedBuilder()
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
-    .setDescription("Your name has been **restricted** (market product) for 1 week!: " + new Date().toLocaleDateString() + " ~ " + date.toLocaleDateString() +
-                    "\n\nYour nickname has been restricted to **" + product[0] +
-                    "\nYour name will be changed back to " + product[1] + " after a week")
+    .setDescription("Your name has been **restricted** (market product) for 1 week!: " + new Date().toLocaleDateString() + " ~ " + new Date(product.date).toLocaleDateString() +
+                    "\n\nYour nickname has been restricted to **" + product.newNickname +
+                    "**\nYour name will be changed back to **" + product.oldNickname + "** after a week")
 
     await member.send({ embeds: [embed] }).catch(err => { console.log(err) })
 }
 
-async function sendUnrestrictMessage(product, member, date) {
+async function sendUnrestrictMessage(product, member) {
     const embed = new EmbedBuilder()
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
-    .setDescription("Your name restriction (market product) has been **lifted**: " + product[2].toDate().toLocaleDateString() + " ~ " + date.toLocaleDateString() +
-                    "\n\nYour nickname has been changed from **" + product[0] + "** back to **" + product[1] + "**")
+    .setDescription("Your name restriction (market product) has been **lifted** as of: " + new Date().toLocaleDateString() +
+                    "\n\nYour nickname has been changed from **" + product.newNickname + "** back to **" + product.oldNickname + "**")
 
     await member.send({ embeds: [embed] }).catch(err => console.log(err))
 

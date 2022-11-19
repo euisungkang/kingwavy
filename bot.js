@@ -24,7 +24,7 @@ client.login(process.env.BOT_TOKEN_KW)
 client.on('ready', async () => {
     console.log("help pls oh god")
 
-    console.log(await database.getAllSubscriptions('237018129664966656'))
+    //console.log(await database.getAllSubscriptions('237018129664966656'))
 
     client.user.setActivity("$guide", { type: ActivityType.Listening })
 
@@ -64,7 +64,7 @@ client.on('messageCreate', message => {
     } else if (cmd == 'edit') {
         editCommand(message)
     } else if (cmd == 'test') {
-        database.updateBadges(1, "", 0)
+        test()
     }
 });
 
@@ -88,13 +88,16 @@ async function test() {
     let servername = await database.getRestrictedServerName();
     let servericon = await database.getRestrictedServerIcon();
 
+    console.log("Database Call Complete")
+
     let now = new Date()
     for (const [key, value] of Object.entries(nicknames)) {
-        if (value[2].toDate() < now.setDate(now.getDate())) {
+        if (value.date.toDate() < now.setDate(now.getDate())) {
+            console.log("Changing Nickname")
             const wavy = await client.guilds.resolve('687839393444397105')
-            let target = await wavy.members.fetch(key, { force: true }).catch(err => console.log(err))
+            let target = await wavy.members.fetch(value.id, { force: true }).catch(err => console.log(err))
 
-            await market.sendUnrestrictMessage(nicknames[key], target, now);
+            await market.sendUnrestrictMessage(nicknames[key], target);
 
             delete nicknames[key]
 
@@ -102,20 +105,22 @@ async function test() {
         }
     }
 
-    if (Object.keys(servername).length != 0 && (Object.values(servername)[0])[2].toDate() < now.setDate(now.getDate())) {
+    console.log("Inspecting Server Name")
+    if (Object.keys(servername).length != 0 && ((Object.values(servername)[0]).date).toDate() < now.setDate(now.getDate())) {
         const wavy = await client.guilds.resolve('687839393444397105')
-        wavy.setName((Object.values(servername)[0])[1])
+        wavy.setName((Object.values(servername)[0]).oldName)
 
-        console.log("Server name has been changed back to " + (Object.values(servername)[0])[1])
+        console.log("Server name has been changed back to " + (Object.values(servername)[0]).oldName)
 
         delete servername[Object.keys(servername)[0]]
 
         await database.updateRestrictedServerName(servername)
     }
 
-    if (Object.keys(servericon).length != 0 && (Object.values(servericon)[0])[2].toDate() < now.setDate(now.getDate())) {
+    console.log("Inspecting Server Icon")
+    if (Object.keys(servericon).length != 0 && ((Object.values(servericon)[0]).date).toDate() < now.setDate(now.getDate())) {
         const wavy = await client.guilds.resolve('687839393444397105')
-        wavy.setIcon((Object.values(servericon)[0])[1])
+        wavy.setIcon((Object.values(servericon)[0]).oldIcon)
 
         console.log("Server icon has been changed back")
 
@@ -126,48 +131,7 @@ async function test() {
 
 // Start of every day, see if anyone's restrictions are released
 cron.schedule('1 0 * * *', async () => {
-    console.log("Checking Restrictions")
-
-    let nicknames = await database.getRestrictedNicknames();
-    let servername = await database.getRestrictedServerName();
-    let servericon = await database.getRestrictedServerIcon();
-
-    let now = new Date()
-    for (const [key, value] of Object.entries(nicknames)) {
-        if (value[2].toDate() < now.setDate(now.getDate())) {
-            const wavy = await client.guilds.resolve('687839393444397105')
-            let target = await wavy.members.fetch(key, { force: true }).catch(err => console.log(err))
-
-            await market.sendUnrestrictMessage(nicknames[key], target, now);
-
-            delete nicknames[key]
-
-            await database.updateRestrictedNicknames(nicknames)
-        }
-    }
-
-    if (Object.keys(servername).length != 0 && (Object.values(servername)[0])[2].toDate() < now.setDate(now.getDate())) {
-        const wavy = await client.guilds.resolve('687839393444397105')
-        wavy.setName((Object.values(servername)[0])[1])
-
-        console.log("Server name has been changed back to " + (Object.values(servername)[0])[1])
-
-        delete servername[Object.keys(servername)[0]]
-
-        await database.updateRestrictedServerName(servername)
-
-
-    }
-
-    if (Object.keys(servericon).length != 0 && (Object.values(servericon)[0])[2].toDate() < now.setDate(now.getDate())) {
-        const wavy = await client.guilds.resolve('687839393444397105')
-        wavy.setIcon((Object.values(servericon)[0])[1])
-
-        console.log("Server icon has been changed back")
-
-        delete servericon[Object.keys(servericon)[0]]
-        await database.updateRestrictedServerIcon(servericon)
-    }
+    test()
 })
 
 // cron.schedule('00 5 * * *', () => {
@@ -215,12 +179,21 @@ async function editCommand(msg) {
     .setColor('#ff6ad5')
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】 $edit command')
     .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
-    .addFields(
-        { name: "Your editable market features", value: "\u200B" }
-    )
+
 
     let subscriptions = await database.getAllSubscriptions(msg.author.id)
+    console.log(subscriptions)
+    if (subscriptions.size == 0) {
+        embed.addFields(
+            { name: "Seems like you don't have any editable features from the market\nPurchase something and try again" , value: "\u200B" }
+        )
+    } else {
+        embed.addFields({ name: "Your editable market features", value: "\u200B" })
 
+        subscriptions.forEach((key, value) => {
+
+        })
+    }
 
     msg.author.send({ embeds: [embed] })
 }
