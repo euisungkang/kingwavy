@@ -223,7 +223,7 @@ async function updateBadges(id, badge) {
 
     const doc = await userDB.get()
 
-    let badges = await doc.data().purchased
+    let badges = await doc.data().badges
 
     let newBadge = {
         id: badge.id,
@@ -234,7 +234,7 @@ async function updateBadges(id, badge) {
     if (!badges.hasOwnProperty(id))
         badges[id] = [newBadge]
     else
-        badges[Object.keys(badges)[id]].push(newBadge)
+        badges[id].push(newBadge)
 
     await userDB.update({
         badges: badges
@@ -250,7 +250,7 @@ async function updateRoles(id, role, tier) {
 
     const doc = await userDB.get()
 
-    let roles = await doc.data().purchased
+    let roles = await doc.data().roles
 
     let newRole = {
         id: role.id,
@@ -262,7 +262,7 @@ async function updateRoles(id, role, tier) {
     if (!roles.hasOwnProperty(id))
         roles[id] = [newRole]
     else
-        roles[Object.keys(roles)[id]].push(newRole)
+        roles[id].push(newRole)
 
     await userDB.update({
         roles: roles
@@ -284,32 +284,32 @@ async function getAllSubscriptions(id) {
     let toReturn = new Map()
 
     let doc = await roles.get()
-    let purchasedRoles = await doc.data().purchased
+    let purchasedRoles = await doc.data().roles
     if (purchasedRoles.hasOwnProperty(id)) {
-        purchasedRoles.forEach(role => {
-            toReturn.set(role.tier, role)
+        purchasedRoles[id].forEach(role => {
+            toReturn.set(role, role.tier)
         })
     }
 
     doc = await badges.get()
-    let purchasedBadges = await doc.data().purchased
+    let purchasedBadges = await doc.data().badges
     if (purchasedBadges.hasOwnProperty(id))
-        toReturn.set(4, purchasedBadges[id])
+        toReturn.set(purchasedBadges[id], 4)
 
     doc = await nicknames.get()
     let restrictedNicknames = await doc.data().restricted
     if (restrictedNicknames.hasOwnProperty(id))
-        toReturn.set(5, restrictedNicknames)
+        toReturn.set(restrictedNicknames[id], 5)
 
     doc = await serverIcon.get()
     let restrictedIcon = await doc.data().restricted
     if (restrictedIcon.hasOwnProperty(id))
-        toReturn.set(6, restrictedIcon)
+        toReturn.set(restrictedIcon, 6)
 
     doc = await serverName.get()
     let restrictedName = await doc.data().restricted
     if (restrictedName.hasOwnProperty(id))
-        toReturn.set(7, restrictedName)
+        toReturn.set(restrictedName, 7)
     
     return toReturn
 }

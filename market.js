@@ -280,10 +280,12 @@ async function processProduct(user, channel, logs, guild, productID) {
         }
 
         for (const [key, value] of Object.entries(restricted)) {
-            if (value.id == polished[0]) {
-                await channel.send({ content: "Seems like " + targetName + " is already a target.\n" +
-                                    "Either pick someone else, or try again after " + targetName + "'s restriction is lifted"})
-                return false
+            for (let i = 0; i < value.length; i++) {
+                if (value[i].id == polished[0]) {
+                    await channel.send({ content: "Seems like " + targetName + " is already a target.\n" +
+                                        "Either pick someone else, or try again after " + targetName + "'s restriction is lifted"})
+                    return false
+                }
             }
         }
 
@@ -305,20 +307,24 @@ async function processProduct(user, channel, logs, guild, productID) {
         date.setDate(date.getDate() + 7)
         date.setUTCHours(0,0,0,0)
 
-        updateRestricted[user.id] = {
+        newRestricted = {
             id: polished[0],
             newNickname: targetRestrictedName,
             oldNickname: target.nickname,
             date: date
         }
 
-        updateRestricted = Object.assign(restricted, updateRestricted)
-
-        database.updateRestrictedNicknames(updateRestricted)
-
         target.setNickname(targetRestrictedName)
 
-        await sendRestrictMessage(updateRestricted[user.id], target)
+        await sendRestrictMessage(newRestricted, target)
+
+        if (restricted.hasOwnProperty(user.id)) {
+            restricted[user.id].push(newRestricted)
+        } else {
+            restricted[user.id] = [newRestricted]
+        }
+
+        database.updateRestrictedNicknames(restricted)
 
         return true
 
@@ -444,6 +450,7 @@ async function getEmbed() {
     let products = await getProducts();
 
     const embed = new EmbedBuilder()
+    .setColor('#ff6ad5')
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
     .setDescription("To purchase a product, click on the <:HentaiCoin:814968693981184030>, and I will attend you.\n\n" +
@@ -490,6 +497,7 @@ async function awaitResponse(channel, filter, time, charLimit) {
 
 async function sendRestrictMessage(product, member) {
     const embed = new EmbedBuilder()
+    .setColor('#ff6ad5')
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
     .setDescription("Your name has been **restricted** (market product) for 1 week!: " + new Date().toLocaleDateString() + " ~ " + new Date(product.date).toLocaleDateString() +
@@ -501,6 +509,7 @@ async function sendRestrictMessage(product, member) {
 
 async function sendUnrestrictMessage(product, member) {
     const embed = new EmbedBuilder()
+    .setColor('#ff6ad5')
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
     .setDescription("Your name restriction (market product) has been **lifted** as of: " + new Date().toLocaleDateString() +

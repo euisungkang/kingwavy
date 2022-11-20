@@ -88,26 +88,34 @@ async function test() {
     let servername = await database.getRestrictedServerName();
     let servericon = await database.getRestrictedServerIcon();
 
+    const wavy = await client.guilds.resolve('687839393444397105')
+
     console.log("Database Call Complete")
 
     let now = new Date()
     for (const [key, value] of Object.entries(nicknames)) {
-        if (value.date.toDate() < now.setDate(now.getDate())) {
-            console.log("Changing Nickname")
-            const wavy = await client.guilds.resolve('687839393444397105')
-            let target = await wavy.members.fetch(value.id, { force: true }).catch(err => console.log(err))
+        value.forEach(async (nn, i) => {
+            if (nn.date.toDate() < now.setDate(now.getDate())) {
+                console.log("Changing Nickname")
 
-            await market.sendUnrestrictMessage(nicknames[key], target);
+                let target = await wavy.members.fetch(nn.id, { force: true }).catch(err => console.log(err))
+    
+                await market.sendUnrestrictMessage(nn, target);
+    
+                delete nicknames[key][i]
 
-            delete nicknames[key]
-
-            await database.updateRestrictedNicknames(nicknames)
-        }
+                if (nicknames[key].length < 1) {
+                    delete nicknames[key]
+                }
+    
+                await database.updateRestrictedNicknames(nicknames)
+            }
+        })
     }
 
     console.log("Inspecting Server Name")
     if (Object.keys(servername).length != 0 && ((Object.values(servername)[0]).date).toDate() < now.setDate(now.getDate())) {
-        const wavy = await client.guilds.resolve('687839393444397105')
+
         wavy.setName((Object.values(servername)[0]).oldName)
 
         console.log("Server name has been changed back to " + (Object.values(servername)[0]).oldName)
@@ -119,7 +127,7 @@ async function test() {
 
     console.log("Inspecting Server Icon")
     if (Object.keys(servericon).length != 0 && ((Object.values(servericon)[0]).date).toDate() < now.setDate(now.getDate())) {
-        const wavy = await client.guilds.resolve('687839393444397105')
+
         wavy.setIcon((Object.values(servericon)[0]).oldIcon)
 
         console.log("Server icon has been changed back")
@@ -182,7 +190,7 @@ async function editCommand(msg) {
 
 
     let subscriptions = await database.getAllSubscriptions(msg.author.id)
-    console.log(subscriptions)
+    //console.log(subscriptions)
     if (subscriptions.size == 0) {
         embed.addFields(
             { name: "Seems like you don't have any editable features from the market\nPurchase something and try again" , value: "\u200B" }
@@ -190,9 +198,33 @@ async function editCommand(msg) {
     } else {
         embed.addFields({ name: "Your editable market features", value: "\u200B" })
 
-        subscriptions.forEach((key, value) => {
-
+        await subscriptions.forEach((key, value) => {
+            //console.log(key)
+            //console.log(value)
+            if (key >= 1 && key <= 3) {
+                embed.addFields({ name: "Editable Role: ",
+                                  value: "Tier: **" + value.tier + "**\nName: " + value.name + "\nColor: " + value.color })
+            } else if (key == 4) {
+                embed.addFields({ name: '\u200B', value: "**Editable Badges: **" })
+                value.forEach(badge => {
+                    embed.addFields({ name: "Name: " + badge.name, value: "Color: " + badge.color, inline: true})
+                })
+            } else if (key == 5) {
+                embed.addFields({ name: '\u200B', value: "**Editable Nicknames: **" })
+                value.forEach(nn => {
+                    embed.addFields({ name: "Current Name: " + nn.newNickname, value: "Old Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString(), inline: true })
+                })
+            } else if (key == 6) {
+                embed.addFields({ name: '\u200B', value: "**Server icon is editable!**" })
+            } else if (key == 7) {
+                embed.addFields({ name: "\u200B\nServer Name: " + value.newName, value: "Expiration: " + value[msg.author.id].date.toDate().toLocaleDateString()})
+            }
         })
+
+        // Add Emoji Reaction for Options
+        // Await Reaction + Send Appropriate Message
+        // Resolve Request
+        // Update database and appropriate server features
     }
 
     msg.author.send({ embeds: [embed] })
