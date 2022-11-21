@@ -93,25 +93,29 @@ async function test() {
     console.log("Database Call Complete")
 
     let now = new Date()
-    for (const [key, value] of Object.entries(nicknames)) {
+    let changed = nicknames
+    for (const [key, value] of Object.entries(nicknames).slice().reverse()) {
         value.forEach(async (nn, i) => {
             if (nn.date.toDate() < now.setDate(now.getDate())) {
                 console.log("Changing Nickname")
 
                 let target = await wavy.members.fetch(nn.id, { force: true }).catch(err => console.log(err))
     
-                await market.sendUnrestrictMessage(nn, target);
-    
-                delete nicknames[key][i]
+                target.setNickname(nicknames[key][i].oldNickname)
 
-                if (nicknames[key].length < 1) {
+                await market.sendUnrestrictMessage(nn, target);
+
+                nicknames[key].splice(i, 1)
+
+                if (nicknames[key].length < 1)
                     delete nicknames[key]
-                }
-    
+                    
                 await database.updateRestrictedNicknames(nicknames)
             }
         })
     }
+
+    
 
     console.log("Inspecting Server Name")
     if (Object.keys(servername).length != 0 && ((Object.values(servername)[0]).date).toDate() < now.setDate(now.getDate())) {
@@ -196,38 +200,48 @@ async function editCommand(msg) {
             { name: "Seems like you don't have any editable features from the market\nPurchase something and try again" , value: "\u200B" }
         )
     } else {
-        embed.addFields({ name: "Your editable market features", value: "\u200B" })
+        embed.addFields(
+            { name: "Your editable market features", value: "\u200B" },
+            { name: "React with the corresponding emoji to edit one of your features", value: "\u200B" }
+        )
+
 
         await subscriptions.forEach((key, value) => {
             //console.log(key)
             //console.log(value)
             if (key >= 1 && key <= 3) {
-                embed.addFields({ name: "Editable Role: ",
-                                  value: "Tier: **" + value.tier + "**\nName: " + value.name + "\nColor: " + value.color })
+                embed.addFields({ name: "Editable Role: 👑",
+                                  value: "Tier: **" + value.tier + "**\nName: **" + value.name + "**\nColor: " + value.color })
             } else if (key == 4) {
-                embed.addFields({ name: '\u200B', value: "**Editable Badges: **" })
+                embed.addFields({ name: '\u200B', value: "**Editable Badges: ** <:wavyheart:893239268309344266>" })
                 value.forEach(badge => {
-                    embed.addFields({ name: "Name: " + badge.name, value: "Color: " + badge.color, inline: true})
+                    embed.addFields({ name: badge.name, value: "Color: " + badge.color, inline: true})
                 })
             } else if (key == 5) {
-                embed.addFields({ name: '\u200B', value: "**Editable Nicknames: **" })
+                embed.addFields({ name: '\u200B', value: "**Editable Nicknames: ** <:groovy:1044251839715102790>" })
                 value.forEach(nn => {
-                    embed.addFields({ name: "Current Name: " + nn.newNickname, value: "Old Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString(), inline: true })
+                    embed.addFields({ name: nn.newNickname, value: "Old Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString(), inline: true })
                 })
             } else if (key == 6) {
-                embed.addFields({ name: '\u200B', value: "**Server icon is editable!**" })
+                embed.addFields({ name: '\u200B', value: "**Server icon is editable!** <:aesthetic:1044251723251855441>" })
             } else if (key == 7) {
-                embed.addFields({ name: "\u200B\nServer Name: " + value.newName, value: "Expiration: " + value[msg.author.id].date.toDate().toLocaleDateString()})
+                embed.addFields({ name: "\u200B\nServer Name: " + value[msg.author.id].newName + " 💎", value: "Expiration: " + value[msg.author.id].date.toDate().toLocaleDateString()})
             }
         })
 
-        // Add Emoji Reaction for Options
+
+
         // Await Reaction + Send Appropriate Message
         // Resolve Request
         // Update database and appropriate server features
     }
 
-    msg.author.send({ embeds: [embed] })
+    let initialMSG = await msg.author.send({ embeds: [embed] })
+    initialMSG.react("👑")
+    initialMSG.react("<:wavyheart:893239268309344266>")
+    initialMSG.react("<:groovy:1044251839715102790>")
+    initialMSG.react("<:aesthetic:1044251723251855441>")
+    initialMSG.react("💎")
 }
 
 let ldbIDCurr = '966719668117209129'

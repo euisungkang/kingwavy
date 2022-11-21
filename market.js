@@ -300,7 +300,6 @@ async function processProduct(user, channel, logs, guild, productID) {
             return false
 
         // Add restricted name to current restricted names
-        let updateRestricted = {}
 
         // Get +week date from date purchased. Also set time to beginning of the day
         let date = new Date()
