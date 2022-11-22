@@ -310,6 +310,7 @@ async function processProduct(user, channel, logs, guild, productID) {
             id: polished[0],
             newNickname: targetRestrictedName,
             oldNickname: target.nickname,
+            username: target.user.username,
             date: date
         }
 

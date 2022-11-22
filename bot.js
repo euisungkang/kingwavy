@@ -94,13 +94,14 @@ async function test() {
 
     let now = new Date()
     let changed = nicknames
-    for (const [key, value] of Object.entries(nicknames).slice().reverse()) {
-        value.forEach(async (nn, i) => {
+    for (const [key, value] of Object.entries(nicknames)) {
+        for (let i = value.length - 1; i >= 0; i--) {
+            let nn = value[i]
             if (nn.date.toDate() < now.setDate(now.getDate())) {
-                console.log("Changing Nickname")
+                console.log("Changing Nickname: " + nn.newNickname + " to " + nn.oldNickname)
 
                 let target = await wavy.members.fetch(nn.id, { force: true }).catch(err => console.log(err))
-    
+
                 target.setNickname(nicknames[key][i].oldNickname)
 
                 await market.sendUnrestrictMessage(nn, target);
@@ -109,13 +110,11 @@ async function test() {
 
                 if (nicknames[key].length < 1)
                     delete nicknames[key]
-                    
-                await database.updateRestrictedNicknames(nicknames)
             }
-        })
+        }
     }
-
-    
+    if (changed == nicknames)
+        await database.updateRestrictedNicknames(nicknames)
 
     console.log("Inspecting Server Name")
     if (Object.keys(servername).length != 0 && ((Object.values(servername)[0]).date).toDate() < now.setDate(now.getDate())) {
@@ -191,7 +190,11 @@ async function editCommand(msg) {
     .setColor('#ff6ad5')
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】 $edit command')
     .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
+    .addFields({ name: "Loading...", value: "\u200B" })
 
+    let initialMSG = await msg.author.send({ embeds: [embed] })
+
+    embed.spliceFields(0, 1)
 
     let subscriptions = await database.getAllSubscriptions(msg.author.id)
     //console.log(subscriptions)
@@ -204,45 +207,72 @@ async function editCommand(msg) {
             { name: "Your editable market features", value: "\u200B" },
             { name: "React with the corresponding emoji to edit one of your features", value: "\u200B" }
         )
-
-
         await subscriptions.forEach((key, value) => {
-            //console.log(key)
-            //console.log(value)
             if (key >= 1 && key <= 3) {
                 embed.addFields({ name: "Editable Role: 👑",
                                   value: "Tier: **" + value.tier + "**\nName: **" + value.name + "**\nColor: " + value.color })
+                initialMSG.react("👑")
             } else if (key == 4) {
                 embed.addFields({ name: '\u200B', value: "**Editable Badges: ** <:wavyheart:893239268309344266>" })
                 value.forEach(badge => {
                     embed.addFields({ name: badge.name, value: "Color: " + badge.color, inline: true})
                 })
+                initialMSG.react("<:wavyheart:893239268309344266>")
             } else if (key == 5) {
                 embed.addFields({ name: '\u200B', value: "**Editable Nicknames: ** <:groovy:1044251839715102790>" })
                 value.forEach(nn => {
-                    embed.addFields({ name: nn.newNickname, value: "Old Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString(), inline: true })
+                    embed.addFields({ name: nn.newNickname, value: "Old Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString() + "\nUsername: " + nn.username, inline: true })
                 })
+                initialMSG.react("<:groovy:1044251839715102790>")
             } else if (key == 6) {
                 embed.addFields({ name: '\u200B', value: "**Server icon is editable!** <:aesthetic:1044251723251855441>" })
+                initialMSG.react("<:aesthetic:1044251723251855441>")
             } else if (key == 7) {
                 embed.addFields({ name: "\u200B\nServer Name: " + value[msg.author.id].newName + " 💎", value: "Expiration: " + value[msg.author.id].date.toDate().toLocaleDateString()})
+                initialMSG.react("💎")
             }
         })
-
-
-
-        // Await Reaction + Send Appropriate Message
-        // Resolve Request
-        // Update database and appropriate server features
     }
 
-    let initialMSG = await msg.author.send({ embeds: [embed] })
-    initialMSG.react("👑")
-    initialMSG.react("<:wavyheart:893239268309344266>")
-    initialMSG.react("<:groovy:1044251839715102790>")
-    initialMSG.react("<:aesthetic:1044251723251855441>")
-    initialMSG.react("💎")
+    initialMSG.edit({ embeds: [embed] })
+
+    const filter = (reaction, user) => (reaction.emoji.name == '👑' ||
+                                        reaction.emoji.name == 'wavyheart' ||
+                                        reaction.emoji.name == 'groovy' ||
+                                        reaction.emoji.name == 'aesthetic' ||
+                                        reaction.emoji.name == '💎') &&
+                                        user.id != '813021543998554122'
+    
+    let reaction = await initialMSG.awaitReactions({ filter, max: 1, time: 30000 })
+    .catch(err => console.log(err))
+
+    let reactionName = reaction.first().emoji.name
+
+    console.log(reactionName)
+
+    let embed2 = new EmbedBuilder()
+    .setColor('#ff6ad5')
+    .setTitle('【 𝓦 𝓪 𝓿 𝔂 】 $edit command')
+    .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
+    
+    if (reactionName == '👑') {
+        embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom role**" })
+    } else if (reactionName == 'wavyheart') {
+        embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom badge**" })
+    } else if (reactionName == 'groovy') {
+        embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **restricted nickname**" })
+    } else if (reactionName == 'aesthetic') {
+        embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server icon**" })
+    } else if (reactionName == '💎') {
+        embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server name**" })
+    }
+
+    let featureMSG = await msg.author.send({ embeds: [embed2] })
+
+    // Resolve Request
+    // Update database and appropriate server features
 }
+
 
 let ldbIDCurr = '966719668117209129'
 let ldbIDBoost = '966719660525502524'
