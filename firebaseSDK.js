@@ -287,30 +287,30 @@ async function getAllSubscriptions(id) {
     let purchasedRoles = await doc.data().roles
     if (purchasedRoles.hasOwnProperty(id)) {
         purchasedRoles[id].forEach(role => {
-            toReturn.set(role, role.tier)
+            toReturn.set(role.tier, role)
         })
     }
 
     doc = await badges.get()
     let purchasedBadges = await doc.data().badges
     if (purchasedBadges.hasOwnProperty(id))
-        toReturn.set(purchasedBadges[id], 4)
+        toReturn.set(4, purchasedBadges[id])
 
     doc = await nicknames.get()
     let restrictedNicknames = await doc.data().restricted
     if (restrictedNicknames.hasOwnProperty(id))
-        toReturn.set(restrictedNicknames[id], 5)
+        toReturn.set(5, restrictedNicknames[id])
 
     doc = await serverIcon.get()
     let restrictedIcon = await doc.data().restricted
     if (restrictedIcon.hasOwnProperty(id))
-        toReturn.set(restrictedIcon, 6)
+        toReturn.set(6, restrictedIcon)
 
     doc = await serverName.get()
     let restrictedName = await doc.data().restricted
     if (restrictedName.hasOwnProperty(id))
-        toReturn.set(restrictedName, 7)
-    
+        toReturn.set(7, restrictedName)    
+        
     return toReturn
 }
 

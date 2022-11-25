@@ -533,5 +533,6 @@ function downloadIcon(url) {
 module.exports = {
     updateMarket : updateMarket,
     awaitMarketReaction : awaitMarketReaction,
-    sendUnrestrictMessage : sendUnrestrictMessage
+    sendUnrestrictMessage : sendUnrestrictMessage,
+    awaitResponse : awaitResponse
 }

@@ -197,6 +197,7 @@ async function editCommand(msg) {
     embed.spliceFields(0, 1)
 
     let subscriptions = await database.getAllSubscriptions(msg.author.id)
+    let rolePurchased
     //console.log(subscriptions)
     if (subscriptions.size == 0) {
         embed.addFields(
@@ -207,8 +208,9 @@ async function editCommand(msg) {
             { name: "Your editable market features", value: "\u200B" },
             { name: "React with the corresponding emoji to edit one of your features", value: "\u200B" }
         )
-        await subscriptions.forEach((key, value) => {
+        await subscriptions.forEach((value, key) => {
             if (key >= 1 && key <= 3) {
+                rolePurchased = key
                 embed.addFields({ name: "Editable Role: 👑",
                                   value: "Tier: **" + value.tier + "**\nName: **" + value.name + "**\nColor: " + value.color })
                 initialMSG.react("👑")
@@ -257,6 +259,27 @@ async function editCommand(msg) {
     
     if (reactionName == '👑') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom role**" })
+
+        let role = subscriptions.get(rolePurchased)
+
+        embed2.addFields(
+            { name: "Your editable role:",
+              value: "Tier: **" + role.tier + "**\nName: **" + role.name + "**\nColor: " + role.color },
+            { name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>) or the **color** (<:srsly:1002091997970042920>)?" }
+        )
+
+        let featureMSG = await msg.author.send({ embeds: [embed2] })
+        featureMSG.react("<:shek:968122117453393930>")
+        featureMSG.react("<:srsly:1002091997970042920>")
+
+        let filter = (m) => m.author.id == user.id
+        let roleName = await market.awaitResponse(featureMSG.channel, filter, 30000, true);
+        if (roleName == false) {
+            return false
+        }
+
+        
+
     } else if (reactionName == 'wavyheart') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom badge**" })
     } else if (reactionName == 'groovy') {
@@ -267,7 +290,7 @@ async function editCommand(msg) {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server name**" })
     }
 
-    let featureMSG = await msg.author.send({ embeds: [embed2] })
+    //let featureMSG = await msg.author.send({ embeds: [embed2] })
 
     // Resolve Request
     // Update database and appropriate server features
