@@ -181,6 +181,7 @@ async function guideCommand(msg) {
 
 async function editCommand(msg) {
     console.log(msg.author.id)
+    const wavy = await client.guilds.resolve('687839393444397105')
 
     let replyChannel = await client.channels.fetch(msg.channel.id)
     replyChannel.send({ content: "Check your DMs <@" + msg.author.id + ">\n" + 
@@ -238,7 +239,7 @@ async function editCommand(msg) {
 
     initialMSG.edit({ embeds: [embed] })
 
-    const filter = (reaction, user) => (reaction.emoji.name == '👑' ||
+    let filter = (reaction, user) => (reaction.emoji.name == '👑' ||
                                         reaction.emoji.name == 'wavyheart' ||
                                         reaction.emoji.name == 'groovy' ||
                                         reaction.emoji.name == 'aesthetic' ||
@@ -261,6 +262,7 @@ async function editCommand(msg) {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom role**" })
 
         let role = subscriptions.get(rolePurchased)
+        let roleOBJ = await wavy.roles.fetch(role.id).catch(err => console.log(err))
 
         embed2.addFields(
             { name: "Your editable role:",
@@ -272,13 +274,61 @@ async function editCommand(msg) {
         featureMSG.react("<:shek:968122117453393930>")
         featureMSG.react("<:srsly:1002091997970042920>")
 
-        let filter = (m) => m.author.id == user.id
-        let roleName = await market.awaitResponse(featureMSG.channel, filter, 30000, true);
-        if (roleName == false) {
-            return false
-        }
+        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly') &&
+                                      user.id != '813021543998554122'
 
+        reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 })
+        .catch(err => console.log(err))
+
+        reactionName = reaction.first().emoji.name
+
+        console.log(reactionName)
+
+        filter = (m) => m.author.id == msg.author.id
+
+        let optionMSG
+
+        if (reactionName == 'shek') {
+            optionMSG = await msg.author.send({ content: "Current role name is: " + role.name + "\nWhat do you want to change the name to?"})
+            
+            let newName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
+            if (newName == false) {
+                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                return false
+            }
+
+
+            console.log(newName)
+
+            role.name = newName
+
+            roleOBJ.edit({ name: role.name }).then(res => console.log("Edited role name to " + res.name))
+
+            await database.updateRoles(msg.author.id, role, role.tier)
+
+            await msg.author.send({ content: "Successfully edited the name of your custom role (tier " + role.tier + ") to " + role.name})
+
+
+
+        } else if (reactionName == 'srsly') {
+            optionMSG = await msg.author.send({ content: "Current role hexcode color: " + role.color + "\nWhat do you want to change the color to? Enter a valid hexcode." +
+                                                            "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>" })
         
+            let newColor = await market.awaitResponse(optionMSG.channel, filter, 90000, false)
+            newColor = await market.validHexColor(optionMSG.channel, newColor)
+            if (newColor == false) {
+                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                return false
+            }
+
+            role.color = newColor
+
+            roleOBJ.edit({ color: newColor }).then(res => console.log("Edited role color to " + res.color))
+
+            await database.updateRoles(msg.author.id, role, role.tier)
+
+            await msg.author.send({ content: "Successfully edited the color of your custom role (tier " + role.tier + ") to " + role.color})
+        }
 
     } else if (reactionName == 'wavyheart') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom badge**" })

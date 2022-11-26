@@ -231,13 +231,9 @@ async function processProduct(user, channel, logs, guild, productID) {
             return false;
 
         // Check if badgeColor is a valid hex code
-        if (/^#[0-9A-F]{6}$/i.test(badgeColor) || /^[0-9A-F]{6}$/i.test(badgeColor)) {
-            if (/^[0-9A-F]{6}$/i.test(badgeColor))
-                badgeColor = "#" + badgeColor
-        } else {
-            await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
-            return false;
-        }
+        badgeColor = await validHexColor(channel, badgeColor)
+        if (!badgeColor)
+            return false
 
         // STUB: Add support for Role Icons
 
@@ -530,9 +526,21 @@ function downloadIcon(url) {
         )
 }
 
+async function validHexColor(channel, color) {
+    if (/^#[0-9A-F]{6}$/i.test(color) || /^[0-9A-F]{6}$/i.test(color)) {
+        if (/^[0-9A-F]{6}$/i.test(color))
+            color = "#" + color
+        return color
+    } else {
+        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+        return false
+    }
+}
+
 module.exports = {
     updateMarket : updateMarket,
     awaitMarketReaction : awaitMarketReaction,
     sendUnrestrictMessage : sendUnrestrictMessage,
-    awaitResponse : awaitResponse
+    awaitResponse : awaitResponse,
+    validHexColor : validHexColor
 }

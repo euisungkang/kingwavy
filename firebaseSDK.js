@@ -228,7 +228,7 @@ async function updateBadges(id, badge) {
     let newBadge = {
         id: badge.id,
         name: badge.name,
-        color: badge.hexColor,
+        color: badge.color,
     }
 
     if (!badges.hasOwnProperty(id))
@@ -255,14 +255,13 @@ async function updateRoles(id, role, tier) {
     let newRole = {
         id: role.id,
         name: role.name,
-        color: role.hexColor,
+        color: role.color,
         tier: tier
     }
 
-    if (!roles.hasOwnProperty(id))
-        roles[id] = [newRole]
-    else
-        roles[id].push(newRole)
+    console.log(newRole)
+
+    roles[id] = [newRole]
 
     await userDB.update({
         roles: roles
