@@ -5,6 +5,7 @@ const leaderboard = require('./leaderboard')
 const cron = require('node-cron');
 const database = require('./firebaseSDK');
 const vote = require('./voting')
+const edit = require('./commands/edit')
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -62,7 +63,7 @@ client.on('messageCreate', message => {
     if (cmd == 'guide') {
         guideCommand(message)
     } else if (cmd == 'edit') {
-        editCommand(message)
+        edit.editCommand(client, message)
     } else if (cmd == 'test') {
         test()
     }
@@ -180,7 +181,6 @@ async function guideCommand(msg) {
 }
 
 async function editCommand(msg) {
-    console.log(msg.author.id)
     const wavy = await client.guilds.resolve('687839393444397105')
 
     let replyChannel = await client.channels.fetch(msg.channel.id)
@@ -251,8 +251,6 @@ async function editCommand(msg) {
 
     let reactionName = reaction.first().emoji.name
 
-    console.log(reactionName)
-
     let embed2 = new EmbedBuilder()
     .setColor('#ff6ad5')
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】 $edit command')
@@ -281,9 +279,6 @@ async function editCommand(msg) {
         .catch(err => console.log(err))
 
         reactionName = reaction.first().emoji.name
-
-        console.log(reactionName)
-
         filter = (m) => m.author.id == msg.author.id
 
         let optionMSG
@@ -296,9 +291,6 @@ async function editCommand(msg) {
                 await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
                 return false
             }
-
-
-            console.log(newName)
 
             role.name = newName
 
@@ -332,6 +324,9 @@ async function editCommand(msg) {
 
     } else if (reactionName == 'wavyheart') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom badge**" })
+
+        
+
     } else if (reactionName == 'groovy') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **restricted nickname**" })
     } else if (reactionName == 'aesthetic') {
@@ -339,8 +334,6 @@ async function editCommand(msg) {
     } else if (reactionName == '💎') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server name**" })
     }
-
-    //let featureMSG = await msg.author.send({ embeds: [embed2] })
 
     // Resolve Request
     // Update database and appropriate server features

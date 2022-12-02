@@ -218,6 +218,14 @@ async function updateRestrictedServerIcon(res) {
     })
 }
 
+async function getBadges(id) {
+    let userDB = db.collection('market').doc('badges')
+    
+    const doc = await userDB.get()
+
+    return doc.data().badges[id]
+}
+
 async function updateBadges(id, badge) {
     let userDB = db.collection('market').doc('badges')
 
@@ -324,6 +332,7 @@ module.exports = {
     removeCurrency : removeCurrency,
     removeCum : removeCum,
     updateBadges : updateBadges,
+    getBadges : getBadges,
     updateRoles : updateRoles,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,
