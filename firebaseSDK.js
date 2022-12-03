@@ -253,6 +253,23 @@ async function updateBadges(id, badge) {
     })
 }
 
+async function editBadges(id, bs) {
+    let userDB = db.collection('market').doc('badges')
+    const doc = await userDB.get()
+
+    let badges = await doc.data().badges
+
+    badges[id] = bs
+
+    await userDB.update({
+        badges: badges
+    }).then(() => {
+        console.log("Document written successfully: Custom Badges Updated (Whole)")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function updateRoles(id, role, tier) {
     let userDB = db.collection('market').doc('roles')
 
@@ -333,6 +350,7 @@ module.exports = {
     removeCum : removeCum,
     updateBadges : updateBadges,
     getBadges : getBadges,
+    editBadges : editBadges,
     updateRoles : updateRoles,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,

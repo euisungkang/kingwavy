@@ -46,7 +46,7 @@ async function editCommand(client, msg) {
             } else if (key == 5) {
                 embed.addFields({ name: '\u200B', value: "**Editable Nicknames: ** <:groovy:1044251839715102790>" })
                 value.forEach(nn => {
-                    embed.addFields({ name: nn.newNickname, value: "Old Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString() + "\nUsername: " + nn.username, inline: true })
+                    embed.addFields({ name: nn.username, value: "Current Nickname: " + nn.newNickname + "\nOld Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString(), inline: true })
                 })
                 initialMSG.react("<:groovy:1044251839715102790>")
             } else if (key == 6) {
@@ -147,7 +147,7 @@ async function editCommand(client, msg) {
     } else if (reactionName == 'wavyheart') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom badge**" })
 
-        let badges = await database.getBadges(msg.author.id)
+        let badges = subscriptions.get(4)
         
         let featureMSG
         let badgeID = 0
@@ -162,85 +162,169 @@ async function editCommand(client, msg) {
 
             filter = (m) => m.author.id == msg.author.id
             badgeID = await market.awaitResponse(featureMSG.channel, filter, 30000, false)
-            badgeID = badgeID - 1
-            if (badgeID == false) {
-                await msg.author.send({ content: "Input Error: Try sending a new request in market next time"})
+            if (await validInput(msg.author, badgeID, badges.length) == false)
                 return false
-            }
-        }
-        console.log(badges.length)
-        embed2.spliceFields(badges.length + 2, 1)
+            badgeID = badgeID - 1
+            embed2.spliceFields(badges.length + 2, 1)
+        } else
+            featureMSG = await msg.author.send({ embeds: [embed2] })
         
         embed2.addFields({ name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>) or the **color** (<:srsly:1002091997970042920>)?" })
 
-        //let badgeOBJ = await wavy.roles.fetch(badges[badgeID].id).catch(err => console.log(err))
+        let badge = badges[badgeID]
+        let badgeOBJ = await wavy.roles.fetch(badges[badgeID].id).catch(err => console.log(err))
 
         featureMSG.edit({ embeds: [embed2] })
         featureMSG.react("<:shek:968122117453393930>")
         featureMSG.react("<:srsly:1002091997970042920>")
 
-        // STUB: continue badge development
+        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly') &&
+                                      user.id != '813021543998554122'
 
-        // filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly') &&
-        //                               user.id != '813021543998554122'
+        reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 })
+                         .catch(err => console.log(err))
+        reactionName = reaction.first().emoji.name
 
-        // reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 })
-        // .catch(err => console.log(err))
+        filter = (m) => m.author.id == msg.author.id
 
-        // reactionName = reaction.first().emoji.name
-        // filter = (m) => m.author.id == msg.author.id
-
-        // let optionMSG
-
-        // if (reactionName == 'shek') {
-        //     optionMSG = await msg.author.send({ content: "Current role name is: " + role.name + "\nWhat do you want to change the name to?"})
+        let optionMSG
+        if (reactionName == 'shek') {
+            optionMSG = await msg.author.send({ content: "Current badge name is: " + badge.name + "\nWhat do you want to change the name to?"})
             
-        //     let newName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
-        //     if (newName == false) {
-        //         await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
-        //         return false
-        //     }
+            let newName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
+            if (newName == false) {
+                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                return false
+            }
 
-        //     role.name = newName
+            badge.name = newName
 
-        //     roleOBJ.edit({ name: role.name }).then(res => console.log("Edited role name to " + res.name))
+            badges[badgeID] = badge
 
-        //     await database.updateRoles(msg.author.id, role, role.tier)
+            badgeOBJ.edit({ name: badge.name }).then(res => console.log("Edited badge name to " + res.name))
 
-        //     await msg.author.send({ content: "Successfully edited the name of your custom role (tier " + role.tier + ") to " + role.name})
+            await database.editBadges(msg.author.id, badges)
+
+            await msg.author.send({ content: "Successfully edited the name of your custom badge to " + badge.name})
 
 
 
-        // } else if (reactionName == 'srsly') {
-        //     optionMSG = await msg.author.send({ content: "Current role hexcode color: " + role.color + "\nWhat do you want to change the color to? Enter a valid hexcode." +
-        //                                                     "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>" })
+        } else if (reactionName == 'srsly') {
+            optionMSG = await msg.author.send({ content: "Current badge hexcode color: " + badge.color + "\nWhat do you want to change the color to? Enter a valid hexcode." +
+                                                            "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>" })
         
-        //     let newColor = await market.awaitResponse(optionMSG.channel, filter, 90000, false)
-        //     newColor = await market.validHexColor(optionMSG.channel, newColor)
-        //     if (newColor == false) {
-        //         await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
-        //         return false
-        //     }
+            let newColor = await market.awaitResponse(optionMSG.channel, filter, 90000, false)
+            newColor = await market.validHexColor(optionMSG.channel, newColor)
+            if (newColor == false) {
+                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                return false
+            }
 
-        //     role.color = newColor
+            badge.color = newColor
 
-        //     roleOBJ.edit({ color: newColor }).then(res => console.log("Edited role color to " + res.color))
+            badges[badgeID] = badge
 
-        //     await database.updateRoles(msg.author.id, role, role.tier)
+            badgeOBJ.edit({ color: newColor }).then(res => console.log("Edited badge color to " + res.color))
 
-        //     await msg.author.send({ content: "Successfully edited the color of your custom role (tier " + role.tier + ") to " + role.color})
-        // }
+            await database.editBadges(msg.author.id, badges)
+
+            await msg.author.send({ content: "Successfully edited the color of your custom badge to " + badge.color})
+        }
 
     } else if (reactionName == 'groovy') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **restricted nickname**" })
+
+        let nicknames = subscriptions.get(5)
+
+        let featureMSG
+        let nicknameID = 0
+
+        embed2.addFields({ name: '\u200B', value: "**Editable Restricted Nickname(s): **" })
+        nicknames.forEach((nn, i) => {
+            embed2.addFields({ name: nn.username, value: "**ID**: " + (i + 1) + "\nCurrent Nickname: " + nn.newNickname + "\nOld Name: " + nn.oldNickname + "\nExpiration: " + nn.date.toDate().toLocaleDateString(), inline: true })
+        })
+        if (nicknames.length > 1) {
+            embed2.addFields({ name: '\u200B', value: "Type the **ID** of the nickname you want to change (i.e. 1)" })
+            featureMSG = await msg.author.send({ embeds: [embed2] })
+
+            filter = (m) => msg.author.id == m.author.id
+            nicknameID = await market.awaitResponse(featureMSG.channel, filter, 30000, false)
+            if (await validInput(msg.author, nicknameID, nicknames.length) == false)
+                return false
+            nicknameID = nicknameID - 1
+            embed2.spliceFields(nicknames.length + 2, 1)
+        } else
+            featureMSG = await msg.author.send({ embeds: [embed2] })
+        
+        let nickname = nicknames[nicknameID]
+        let nicknameOBJ = await wavy.members.fetch(nickname.id, { force: true })
+
+        filter = (m) => m.author.id == msg.author.id
+        let optionMSG = await msg.author.send({ content: "User: " + nickname.username + " has a restricted nickname of " + nickname.newNickname + "\nWhat do you want to change the nickname to?" })
+        let newName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
+        if (newName == false) {
+            await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+            return false
+        }
+
+        nickname.newNickname = newName
+        nicknames[nicknameID] = nickname
+
+        nicknameOBJ.setNickname(newName)
+
+        await market.sendRestrictMessage(nickname, nicknameOBJ)
+
+        let format = await database.getRestrictedNicknames()
+        format[msg.author.id] = nicknames
+        await database.updateRestrictedNicknames(format)
+
+        await msg.author.send({ content: "Successfully edited the nickname of " + nickname.username + " to " + nickname.newNickname})
+
     } else if (reactionName == 'aesthetic') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server icon**" })
+
+        let serverIcon = subscriptions.get(6)
+
+        let featureMSG
+
+        embed2.addFields(
+            { name: "\u200B", value: "**Editable Server Icon: " },
+            { name: "", value: "" }
+        )
+
     } else if (reactionName == '💎') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server name**" })
+
+        let serverName = subscriptions.get(7)
+
+        let featureMSG
+
+        embed2.addFields(
+            { name: "\u200B", value: "**Editable Server Name: **"},
+            { name: "", value: "" }
+        )
     }
 
     // Resolve Request
     // Update database and appropriate server features
+}
+
+async function validInput(channel, input, max) {
+    if (isNaN(input)) {
+        await channel.send({ content: "Please enter a valid number <:PepeKindaCringe:815507957935898654>" })
+        return false
+    } else if (Number(input) % 1.0 != 0.0) {
+        await channel.send({ content: "Why the decimals? Want me to split you up into decimals and fuckin decimate u bish?" })
+        return false
+    } else if (input < 1) {
+        await channel.send({ content: "Input Error: The ID you inputted does not exist. Try sending a new request in market next time"})
+        return false
+    } else if (input > max) {
+        await channel.send({ content: "Input Error: The ID you inputted is too damn high (what the fuck?). Try sending a new request in market next time"})
+        return false
+    }
+
+    return true
 }
 
 module.exports = {

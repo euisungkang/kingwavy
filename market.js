@@ -540,6 +540,7 @@ async function validHexColor(channel, color) {
 module.exports = {
     updateMarket : updateMarket,
     awaitMarketReaction : awaitMarketReaction,
+    sendRestrictMessage : sendRestrictMessage,
     sendUnrestrictMessage : sendUnrestrictMessage,
     awaitResponse : awaitResponse,
     validHexColor : validHexColor
