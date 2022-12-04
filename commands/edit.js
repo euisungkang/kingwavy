@@ -29,7 +29,8 @@ async function editCommand(client, msg) {
     } else {
         embed.addFields(
             { name: "Your editable market features", value: "\u200B" },
-            { name: "React with the corresponding emoji to edit one of your features", value: "\u200B" }
+            { name: "\u200B", value: "**React with the corresponding emoji to edit one of your features**" },
+            { name: "React ❌ if you wish to cancel this $edit request", value: "\u200B" }
         )
         await subscriptions.forEach((value, key) => {
             if (key >= 1 && key <= 3) {
@@ -57,6 +58,7 @@ async function editCommand(client, msg) {
                 initialMSG.react("💎")
             }
         })
+        initialMSG.react('❌')
     }
 
     initialMSG.edit({ embeds: [embed] })
@@ -65,7 +67,8 @@ async function editCommand(client, msg) {
                                         reaction.emoji.name == 'wavyheart' ||
                                         reaction.emoji.name == 'groovy' ||
                                         reaction.emoji.name == 'aesthetic' ||
-                                        reaction.emoji.name == '💎') &&
+                                        reaction.emoji.name == '💎' ||
+                                        reaction.emoji.name == '❌') &&
                                         user.id != '813021543998554122'
     
     let reaction = await initialMSG.awaitReactions({ filter, max: 1, time: 30000 })
@@ -78,7 +81,10 @@ async function editCommand(client, msg) {
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】 $edit command')
     .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
     
-    if (reactionName == '👑') {
+    if (reactionName == '❌') {
+        await msg.author.send({ content: "Your $edit request is cancelled.\nFeel free to type $edit in any text channel if you change your mind"})
+        return false
+    } else if (reactionName == '👑') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom role**" })
 
         let role = subscriptions.get(rolePurchased)
@@ -110,7 +116,7 @@ async function editCommand(client, msg) {
             
             let newName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
             if (newName == false) {
-                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                await msg.author.send({ content: "Request timed out. Try sending a new $edit request next time "})
                 return false
             }
 
@@ -131,7 +137,7 @@ async function editCommand(client, msg) {
             let newColor = await market.awaitResponse(optionMSG.channel, filter, 90000, false)
             newColor = await market.validHexColor(optionMSG.channel, newColor)
             if (newColor == false) {
-                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                await msg.author.send({ content: "Request timed out. Try sending a new $edit request next time "})
                 return false
             }
 
@@ -193,7 +199,7 @@ async function editCommand(client, msg) {
             
             let newName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
             if (newName == false) {
-                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                await msg.author.send({ content: "Request timed out. Try sending a new $edit request next time "})
                 return false
             }
 
@@ -216,7 +222,7 @@ async function editCommand(client, msg) {
             let newColor = await market.awaitResponse(optionMSG.channel, filter, 90000, false)
             newColor = await market.validHexColor(optionMSG.channel, newColor)
             if (newColor == false) {
-                await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+                await msg.author.send({ content: "Request timed out. Try sending a new $edit request next time "})
                 return false
             }
 
@@ -263,7 +269,7 @@ async function editCommand(client, msg) {
         let optionMSG = await msg.author.send({ content: "User: " + nickname.username + " has a restricted nickname of " + nickname.newNickname + "\nWhat do you want to change the nickname to?" })
         let newName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
         if (newName == false) {
-            await msg.author.send({ content: "Request timed out. Try sending a new request in market next time "})
+            await msg.author.send({ content: "Request timed out. Try sending a new $edit request next time "})
             return false
         }
 
@@ -283,26 +289,71 @@ async function editCommand(client, msg) {
     } else if (reactionName == 'aesthetic') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server icon**" })
 
-        let serverIcon = subscriptions.get(6)
-
-        let featureMSG
+        let serverIconFormat = subscriptions.get(6)
+        let serverIcon = serverIconFormat[msg.author.id]
 
         embed2.addFields(
             { name: "\u200B", value: "**Editable Server Icon: " },
-            { name: "", value: "" }
+            { name: "\u200B", value: "**Current Server Icon URL: **" + serverIcon.newIcon }
         )
+
+        let featureMSG = await msg.author.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are strictly **512x512** pixels and **8MB** max size" +
+                                                          "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
+
+        let filter = (m) => m.author.id == msg.author.id
+        let newIcon = await featureMSG.channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
+        .catch(err => {
+            console.log(err)
+            return null
+        })
+        if (collected == null) 
+            return false
+        
+        newIcon = newIcon.first().attachments.values().next().value
+
+        if (newIcon.height != 512 && newIcon.width != 512) {
+            await msg.author.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
+                                          "The image you uploaded has dimensions of " + newIcon.width + "x" + newIcon.height +
+                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+            return false
+        } else if (newIcon.size >= 8000000) {
+            await msg.author.send({ content: "The server icon size **must** be **less than 8MB**" +
+                                          "The image you uploaded is of size " + Math.trunc(newIcon.size/1000000) +
+                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+            return false
+        }
+
+        // STUB: Continue Development
 
     } else if (reactionName == '💎') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server name**" })
 
-        let serverName = subscriptions.get(7)
-
-        let featureMSG
+        let serverNameFormat = subscriptions.get(7)
+        let serverName = serverNameFormat[msg.author.id]
 
         embed2.addFields(
             { name: "\u200B", value: "**Editable Server Name: **"},
-            { name: "", value: "" }
+            { name: serverName.newName, value: "Old Name: " + serverName.oldName + "\nExpiration: " + serverName.date.toDate().toLocaleDateString() }
         )
+        let featureMSG = await msg.author.send({ embeds: [embed2] })
+        filter = (m) => m.author.id == msg.author.id
+        let optionMSG = await msg.author.send({ content: "What would you like to change the server name to?"})
+        let newServerName = await market.awaitResponse(optionMSG.channel, filter, 30000, true)
+        if (newServerName == false) {
+            await msg.author.send({ content: "Request Timed Out or Invalid Input. Try sending a new $edit request next time"})
+            return false
+        }
+
+        let oldName = serverName.newName
+
+        serverName.newName = newServerName
+        serverNameFormat[msg.author.id] = serverName
+
+        wavy.setName(newServerName)
+
+        await database.updateRestrictedServerName(serverNameFormat)
+
+        await msg.author.send({ content: "Successfully edited server name from **" + oldName + "** to **" + newServerName + "**"})
     }
 
     // Resolve Request
