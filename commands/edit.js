@@ -306,7 +306,7 @@ async function editCommand(client, msg) {
             console.log(err)
             return null
         })
-        if (collected == null) 
+        if (newIcon == null) 
             return false
         
         newIcon = newIcon.first().attachments.values().next().value
@@ -322,6 +322,17 @@ async function editCommand(client, msg) {
                                           "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
             return false
         }
+
+        serverIcon.newIcon = newIcon.url
+        serverIconFormat[msg.author.id] = serverIcon
+
+        await database.updateRestrictedServerIcon(serverIconFormat)
+        await wavy.setIcon(newIcon.url)
+
+        await msg.author.send({ content: "Successfully edited the server icon. Changes will be actualized shortly" +
+                                         "\nYour server icon product expiration is: **" + serverIcon.date.toDate().toLocaleDateString() + "**"})
+
+        return true
 
         // STUB: Continue Development
 
