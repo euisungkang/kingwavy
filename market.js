@@ -1,8 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { getProducts } = require('./firebaseSDK');
 const database = require('./firebaseSDK');
-
-let mktID = '824832401996906538'
+const axios = require('axios')
 
 async function updateMarket(channel) {
     console.log("updating market");
@@ -11,6 +10,7 @@ async function updateMarket(channel) {
     //channel.send({ content: "__**Market Status: **__\n```diff\n- Currently Offline. Under Maintenance, there will be more products added soon.\n```")
 
     let embed = await getEmbed();
+    let mktID = await database.getMarketMessage()
 
     let exists = true;
     try {
@@ -22,7 +22,7 @@ async function updateMarket(channel) {
         if (!exists) {
             let msg = await channel.send({ embeds: [embed] })
             msg.react('<:HentaiCoin:814968693981184030>')
-            mktID = msg.id
+            database.updateMarketMessage(msg.id)
             return msg;
         } else {
             let msg = await channel.messages.fetch(mktID)
@@ -33,7 +33,7 @@ async function updateMarket(channel) {
     }
 }
 
-async function awaitMarketReaction(message, channel, logs, members, filter) {
+async function awaitMarketReaction(message, channel, logs, guild, filter) {
     console.log("awaiting market reaction")
     let user;
 
@@ -44,49 +44,45 @@ async function awaitMarketReaction(message, channel, logs, members, filter) {
     })
     .catch(err => console.log(err))
 
-    await productPurchase(user, channel, logs, members).catch(err => console.log(err))
+    await productPurchase(user, channel, logs, guild).catch(err => console.log(err))
 
     await deleteAll(channel)
 
-    awaitMarketReaction(message, channel, members, filter);
+    awaitMarketReaction(message, channel, logs, guild, filter);
 }   
 
-async function productPurchase(user, channel, logs, members) {
+async function productPurchase(user, channel, logs, guild) {
     let products = await getProducts();
 
-    let message = await channel.send({ content: "<@" + user.id + "> Enter the ID of the product you want to purchase. Your **cumulative** balance is: "
-                    +  await database.getCum(user.id) + " <:HentaiCoin:814968693981184030>" })
+    await channel.send({ content: "<@" + user.id + "> Enter the ID of the product you want to purchase. Your **cumulative** balance is: "
+                        +  await database.getCum(user.id) + " <:HentaiCoin:814968693981184030>" })
 
     let filter = (m) => m.author.id == user.id;
 
     //What product does the user want to buy?
-    let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
-    .catch(err => {
-        return null;
-    })
-    if (collected == null) {
+    let productID = await awaitResponse(channel, filter, 30000, false)
+    if (productID == false)
         return
-    }
             
-    await confirmProduct(channel, logs, collected, members, user, products)
+    await confirmProduct(channel, logs, productID, guild, user, products)
 
     const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
     await wait(5000);
 }
 
-async function confirmProduct(channel, logs, message, members, user, products) {
+async function confirmProduct(channel, logs, message, guild, user, products) {
     let wallet = await database.getCum(user.id)
     
     // Edge Cases for Product ID
-    if (isNaN(message.first().content)) {
+    if (isNaN(message)) {
         return await channel.send({ content: "Please enter a valid number <:PepeKindaCringe:815507957935898654>" })
-    } else if (Number(message.first().content) % 1.0 != 0.0) {
+    } else if (Number(message) % 1.0 != 0.0) {
         return await channel.send({ content: "Why the decimals? Want me to decimate your wallet bish?" })
-    } else if (Number(message.first().content) < 0) {
+    } else if (Number(message) < 0) {
         return await channel.send({ content: "idk chief, something doesn't seem right here eh?" })
     }
 
-    let productID = Number(message.first().content)
+    let productID = Number(message)
 
     // After Input Verification, Check if ID is valid
     if (productID <= 0 || productID > products.length) {
@@ -109,7 +105,7 @@ async function confirmProduct(channel, logs, message, members, user, products) {
     confirmation.react('✅')
     confirmation.react('❌')
     
-    const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id == message.first().author.id
+    const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != '813021543998554122'
     let reaction = await confirmation.awaitReactions({filter, max: 1 })
 
     let emoji = reaction.first().emoji.name
@@ -121,7 +117,7 @@ async function confirmProduct(channel, logs, message, members, user, products) {
     } else {
         let remaining = wallet - product.price
 
-        if (await processProduct(user, channel, members, productID) == false)
+        if (await processProduct(user, channel, logs, guild, productID) == false)
             return
 
         console.log(user.id + "      " + user.username + " purchased " + product.name +
@@ -146,72 +142,303 @@ async function confirmProduct(channel, logs, message, members, user, products) {
     return
 }
 
-async function processProduct(user, channel, members, productID) {
+async function processProduct(user, channel, logs, guild, productID) {
+    let members = guild.members
 
-    // productID == 5 is setting someone's nickname for 1 month
-    if (productID == 5) {
+    if (productID >= 1 && productID <= 3) {
+        //Custom Role Tier 1
+        //Custom Role Tier 2
+        //Custom Role Tier 3
+
+        await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
+    
+        let filter = (m) => m.author.id == user.id
+        let roleName = await awaitResponse(channel, filter, 30000, true);
+        if (roleName == false)
+            return false
+
+        await channel.send({ content: "Your role will be called " + roleName +
+                                      "\n\nNow pick your role's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
+                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
+
+        let roleColor = await awaitResponse(channel, filter, 90000, false)
+        if (roleColor == false)
+            return false
+        
+        // Check if roleColor is a valid hex code
+        if (/^#[0-9A-F]{6}$/i.test(roleColor) || /^[0-9A-F]{6}$/i.test(roleColor)) {
+            if (/^[0-9A-F]{6}$/i.test(roleColor))
+                roleColor = "#" + roleColor
+        } else {
+            await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+            return false;
+        }
+
+        // Configure pos based on tier of product
+        let pos
+        if (productID == 1) {
+            //Wavy Role
+            let wavyRole = await guild.roles.fetch('687840476744908815')
+            pos = wavyRole.rawPosition - 1
+
+        } else if (productID == 2) {
+            //Groovy Role
+            let groovyRole = await guild.roles.fetch('812983666136842241')
+            pos = groovyRole.rawPosition - 1
+
+        } else {
+            // Aesthetic Role
+            let aesthethicRole = await guild.roles.fetch('812926342249185320')
+            pos = aesthethicRole.rawPosition - 1
+
+        }
+
+        let role = await guild.roles.create({
+            name: roleName,
+            color: roleColor,
+            hoist: true,
+            permissions: [],
+            position: pos,
+            mentionable: true,
+            
+        })
+
+        let target = await members.fetch(user.id, { force: true })
+        target.roles.add(role)
+
+        console.log("Tier " + productID + " role has been created for " + user.username + " called " + roleName +
+        "\nBadge Color: " + roleColor)
+
+        database.updateRoles(user.id, role, productID)
+
+        return true
+
+    } else if (productID == 4) {
+        //Badge/Title
+        await channel.send({ content: "What do you want your custom badge to be called?\n*Badges are displayed on your profile like a role, but won't affect the way you're displayed in the server*" })
+
+        let filter = (m) => m.author.id == user.id;
+        let badgeName = await awaitResponse(channel, filter, 30000, true);
+        if (badgeName == false)
+            return false
+        
+        await channel.send({ content: "Your badge will be called: " + badgeName + 
+                                      "\n\nNow pick your badge's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
+                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
+
+        let badgeColor = await awaitResponse(channel, filter, 90000, false);
+        if (badgeColor == false)
+            return false;
+
+        // Check if badgeColor is a valid hex code
+        badgeColor = await validHexColor(channel, badgeColor)
+        if (!badgeColor)
+            return false
+
+        // STUB: Add support for Role Icons
+
+        let badge = await guild.roles.create({
+            name: badgeName,
+            color: badgeColor,
+            hoist: false,
+            permissions: [],
+            position: 0,
+            mentionable: true,
+            
+        })
+
+        let target = await members.fetch(user.id, { force: true })
+        target.roles.add(badge)
+
+        console.log("Badge has been created for " + user.username + " called " + badgeName +
+                    "\nBadge Color: " + badgeColor)
+
+        database.updateBadges(user.id, badge, productID)
+
+        return true
+
+    // productID == 5 is setting someone's nickname for 1 week
+    } else if (productID == 5) {
         let restricted = await database.getRestrictedNicknames();
 
         // Collect the user whose nickname is to be changed
         await channel.send({ content: "@ the person you want to apply the nickname change (i.e. <@812904867462643713>)\nThey will not be able to change their nickname for a month" })
 
         let filter = (m) => m.author.id == user.id;
+        let targetName = await awaitResponse(channel, filter, 30000, false)
+        if (targetName == false)
+            return false;
 
-        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
-        .catch(err => {
-            console.log(err)
-            return null;
-        })
-        if (collected == null) {
+        let polished = (targetName).match(/(\d+)/)
+        if (polished == null) {
+            await channel.send({ content: "Please enter a valid user :unamused:" })
             return false
         }
 
-        let polished = (collected.first().content).match(/(\d+)/)
-
-        if (restricted.hasOwnProperty(polished[0])) {
-            await channel.send({ content: "Seems like " + collected.first().content + " is already a target.\n" +
-                                "Either pick someone else, or try again after " + collected.first().content + "'s restriction is lifted"})
-            return false
+        for (const [key, value] of Object.entries(restricted)) {
+            for (let i = 0; i < value.length; i++) {
+                if (value[i].id == polished[0]) {
+                    await channel.send({ content: "Seems like " + targetName + " is already a target.\n" +
+                                        "Either pick someone else, or try again after " + targetName + "'s restriction is lifted"})
+                    return false
+                }
+            }
         }
 
         let target = await members.fetch(polished[0], { force: true })
 
         // Collect the username to be changed to
-        await channel.send({ content: "What do you want " + collected.first().content +
+        await channel.send({ content: "What do you want " + targetName +
                             "'s nickname to be changed to (i.e. Cum Guzzler)?"})
 
-        let collected2 = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
-        .catch(err => {
-            console.log(err)
-            return null
-        })
-        if (collected == null) {
+        let targetRestrictedName = await awaitResponse(channel, filter, 30000, true)
+        if (targetRestrictedName == false)
+            return false
+
+        // Add restricted name to current restricted names
+
+        // Get +week date from date purchased. Also set time to beginning of the day
+        let date = new Date()
+        date.setDate(date.getDate() + 7)
+        date.setUTCHours(0,0,0,0)
+
+        newRestricted = {
+            id: polished[0],
+            newNickname: targetRestrictedName,
+            oldNickname: target.nickname,
+            username: target.user.username,
+            date: date
+        }
+
+        target.setNickname(targetRestrictedName)
+
+        await sendRestrictMessage(newRestricted, target)
+
+        if (restricted.hasOwnProperty(user.id)) {
+            restricted[user.id].push(newRestricted)
+        } else {
+            restricted[user.id] = [newRestricted]
+        }
+
+        database.updateRestrictedNicknames(restricted)
+
+        return true
+
+    } else if (productID == 6) {
+        //Change Server PP
+
+        // If someone already purchased product 6
+        let restrictedIcon = await database.getRestrictedServerIcon()
+        if (restrictedIcon.hasOwnProperty(user.id)) {
+            await channel.send({ content: "Seems like someone already changed the server's icon for a week\n" +
+                                          "Try again after " + (restrictedIcon[user.id])[2].toDate().toLocaleDateString() })
             return false
         }
 
-        // Add restricted name to current restricted names
+        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are strictly **512x512** pixels and **8MB** max size" +
+                                      "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
+
+        let filter = (m) => m.author.id == user.id
+        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        .catch(err => {
+            console.log(err)
+            return null;
+        })
+        if (collected == null)
+            return false
+
+        let serverIcon = collected.first().attachments.values().next().value
+
+        // Conditions for dimension and file size of server icon
+        if (serverIcon.height != 512 && serverIcon.width != 512) {
+            await channel.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
+                                          "The image you uploaded has dimensions of " + serverIcon.width + "x" + serverIcon.height +
+                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+            return false
+        } else if (serverIcon.size >= 8000000) {
+            await channel.send({ content: "The server icon size **must** be **less than 8MB**" +
+                                          "The image you uploaded is of size " + Math.trunc(serverIcon.size/1000000) +
+                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+            return false
+        }
+        
         let updateRestricted = {}
-        updateRestricted[polished[0]] = collected2.first().content
+
+        let date = new Date()
+        date.setDate(date.getDate() + 7)
+        date.setUTCHours(0,0,0,0)
+
+        // Save current Icon as a base 64 image
+        let currentIcon = await guild.iconURL({ dynamic: true })
+        let base64Stream = await downloadIcon(currentIcon)
+        
+        updateRestricted[user.id] = {
+            newIcon: serverIcon.url,
+            oldIcon: base64Stream,
+            date: date
+        }
+
+        await database.updateRestrictedServerIcon(updateRestricted)
+
+        await guild.setIcon(serverIcon.url)
+
+        return true
+
+    } else if (productID == 7) {
+        // OG: 【 𝓦 𝓪 𝓿 𝔂 】
+        //Change Server Name
+
+        let restricted = await database.getRestrictedServerName();
+
+        // If someone else already changed the server name
+        if (restricted.hasOwnProperty(user.id)) {
+            await channel.send({ content: "Seems like " + user.username + " already changed the server name to " +  restricted[user.id][0] +
+                                            "\n\n Try again after: " + (restricted[user.id])[2].toDate().toLocaleDateString()})
+            return false
+        }
+
+        await channel.send({ content: "What do you want the new server name to be (1 week)?" })
+
+        let filter = (m) => m.author.id == user.id;
+        let serverName = await awaitResponse(channel, filter, 30000, true)
+        if (serverName == false)
+            return false
+
+        let date = new Date()
+        date.setDate(date.getDate() + 7)
+        date.setUTCHours(0,0,0,0)
+
+        let updateRestricted = {}
+
+        updateRestricted[user.id] = {
+            newName: serverName,
+            oldName: guild.name,
+            date: date
+        }
 
         updateRestricted = Object.assign(restricted, updateRestricted)
 
-        console.log(updateRestricted)
+        await database.updateRestrictedServerName(updateRestricted)
 
-        database.updateRestrictedNicknames(updateRestricted)
+        guild.setName(serverName)
 
-        target.setNickname(collected2.first().content)
+        console.log("Server name has been changed to " + serverName)
 
         return true
     }
+
+    return false
 }
 
 async function deleteAll(channel) {
     let filtered;
     do {
+        let mktID = await database.getMarketMessage()
         let fetched = await channel.messages.fetch({ limit: 100 })
-        filtered = fetched.filter(msg => msg.id != '824832401996906538')
+        filtered = fetched.filter(msg => msg.id != mktID)
         //console.log(filtered)
-        channel.bulkDelete(filtered)
+        if (filtered.size > 0)
+            channel.bulkDelete(filtered)
     } while(filtered.size >= 2)
 }
 
@@ -219,6 +446,7 @@ async function getEmbed() {
     let products = await getProducts();
 
     const embed = new EmbedBuilder()
+    .setColor('#ff6ad5')
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
     .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
     .setDescription("To purchase a product, click on the <:HentaiCoin:814968693981184030>, and I will attend you.\n\n" +
@@ -245,7 +473,75 @@ async function getEmbed() {
     return embed;
 }
 
+async function awaitResponse(channel, filter, time, charLimit) {
+    let collected = await channel.awaitMessages({ filter, max: 1, time: time, errors: ['time'] })
+    .catch(err => {
+        console.log(err)
+        return null;
+    })
+    if (collected == null) {
+        return false
+    } 
+    
+    if (charLimit && (collected.first().content.length < 1 || collected.first().content.length > 32)) {
+        channel.send({ content: "Nicknames must be within 1 - 32 characters long" })
+        return false
+    }
+
+    return collected.first().content
+}
+
+async function sendRestrictMessage(product, member) {
+    const embed = new EmbedBuilder()
+    .setColor('#ff6ad5')
+    .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
+    .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
+    .setDescription("Your name has been **restricted** (market product) for 1 week!: " + new Date().toLocaleDateString() + " ~ " + new Date(product.date).toLocaleDateString() +
+                    "\n\nYour nickname has been restricted to **" + product.newNickname +
+                    "**\nYour name will be changed back to **" + product.oldNickname + "** after a week")
+
+    await member.send({ embeds: [embed] }).catch(err => { console.log(err) })
+}
+
+async function sendUnrestrictMessage(product, member) {
+    const embed = new EmbedBuilder()
+    .setColor('#ff6ad5')
+    .setTitle('【 𝓦 𝓪 𝓿 𝔂 】  Market')
+    .setThumbnail('https://i.ibb.co/FXbw7wp/Wavy-store.jpg')
+    .setDescription("Your name restriction (market product) has been **lifted** as of: " + new Date().toLocaleDateString() +
+                    "\n\nYour nickname has been changed from **" + product.newNickname + "** back to **" + product.oldNickname + "**")
+
+    await member.send({ embeds: [embed] }).catch(err => console.log(err))
+
+    console.log("Succesfully removed name restriction from " + member.user.id)
+}
+
+function downloadIcon(url) {
+    return axios
+        .get(url, {
+            responseType: 'arraybuffer'
+        })
+        .then(
+            response => Buffer.from(response.data, 'base64')
+        )
+}
+
+async function validHexColor(channel, color) {
+    if (/^#[0-9A-F]{6}$/i.test(color) || /^[0-9A-F]{6}$/i.test(color)) {
+        if (/^[0-9A-F]{6}$/i.test(color))
+            color = "#" + color
+        return color
+    } else {
+        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+        return false
+    }
+}
+
 module.exports = {
     updateMarket : updateMarket,
-    awaitMarketReaction : awaitMarketReaction
+    awaitMarketReaction : awaitMarketReaction,
+    sendRestrictMessage : sendRestrictMessage,
+    sendUnrestrictMessage : sendUnrestrictMessage,
+    awaitResponse : awaitResponse,
+    validHexColor : validHexColor
 }

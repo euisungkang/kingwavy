@@ -8,6 +8,29 @@ admin.initializeApp({
 
 let db = admin.firestore();
 
+async function getMarketMessage() {
+    let meta = await db.collection('market').doc('meta')
+
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().message
+
+    return false
+}
+
+async function updateMarketMessage(msg) {
+    let meta = await db.collection('market').doc('meta')
+
+    await meta.update({
+        message: msg
+    }).then(() => {
+        console.log("Document written successfully: Market Message");
+    }).catch(err => {
+        console.log("Error: " + err);
+    })
+}
+
 async function getTopWallets() {
     const wallets = await db.collection('wallets').get();
     let walletmap = new Map();
@@ -124,7 +147,6 @@ async function removeCum(user, amount) {
     const doc = await userDB.get()
     if (doc.exists) {
         aggregate_amount = doc.data().cum - amount;
-        console.log(doc.data())
     }
 
     await userDB.update({
@@ -152,13 +174,173 @@ async function updateRestrictedNicknames(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Restricted Names")
+        console.log("Document written successfully: Restricted Nicknames")
     }).catch(err => {
         console.log("Error: " + err)
     })
 }
 
+async function getRestrictedServerName() {
+    let userDB = db.collection('market').doc('servername')
+    let doc = await userDB.get()
+
+    return doc.data().restricted
+}
+
+async function updateRestrictedServerName(res) {
+    let userDB = db.collection('market').doc('servername')
+
+    await userDB.update({
+        restricted: res
+    }).then(() => {
+        console.log("Document written successfully: Server Name")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function getRestrictedServerIcon() {
+    let userDB = db.collection('market').doc('servericon')
+    let doc = await userDB.get()
+
+    return doc.data().restricted
+}
+
+async function updateRestrictedServerIcon(res) {
+    let userDB = db.collection('market').doc('servericon')
+
+    await userDB.update({
+        restricted: res
+    }).then(() => {
+        console.log("Document written successfully: Server Icon")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function getBadges(id) {
+    let userDB = db.collection('market').doc('badges')
+    
+    const doc = await userDB.get()
+
+    return doc.data().badges[id]
+}
+
+async function updateBadges(id, badge) {
+    let userDB = db.collection('market').doc('badges')
+
+    const doc = await userDB.get()
+
+    let badges = await doc.data().badges
+
+    let newBadge = {
+        id: badge.id,
+        name: badge.name,
+        color: badge.color,
+    }
+
+    if (!badges.hasOwnProperty(id))
+        badges[id] = [newBadge]
+    else
+        badges[id].push(newBadge)
+
+    await userDB.update({
+        badges: badges
+    }).then(() => {
+        console.log("Document written successfully: Custom Badge")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function editBadges(id, bs) {
+    let userDB = db.collection('market').doc('badges')
+    const doc = await userDB.get()
+
+    let badges = await doc.data().badges
+
+    badges[id] = bs
+
+    await userDB.update({
+        badges: badges
+    }).then(() => {
+        console.log("Document written successfully: Custom Badges Updated (Whole)")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function updateRoles(id, role, tier) {
+    let userDB = db.collection('market').doc('roles')
+
+    const doc = await userDB.get()
+
+    let roles = await doc.data().roles
+
+    let newRole = {
+        id: role.id,
+        name: role.name,
+        color: role.color,
+        tier: tier
+    }
+
+    console.log(newRole)
+
+    roles[id] = [newRole]
+
+    await userDB.update({
+        roles: roles
+    }).then(() => {
+        console.log("Document written successfully: Custom Role")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function getAllSubscriptions(id) {
+    let userDB = db.collection('market')
+    const roles = userDB.doc('roles')
+    const badges = userDB.doc('badges')
+    const nicknames = userDB.doc('nickname')
+    const serverName = userDB.doc('servername')
+    const serverIcon = userDB.doc('servericon')
+
+    let toReturn = new Map()
+
+    let doc = await roles.get()
+    let purchasedRoles = await doc.data().roles
+    if (purchasedRoles.hasOwnProperty(id)) {
+        purchasedRoles[id].forEach(role => {
+            toReturn.set(role.tier, role)
+        })
+    }
+
+    doc = await badges.get()
+    let purchasedBadges = await doc.data().badges
+    if (purchasedBadges.hasOwnProperty(id))
+        toReturn.set(4, purchasedBadges[id])
+
+    doc = await nicknames.get()
+    let restrictedNicknames = await doc.data().restricted
+    if (restrictedNicknames.hasOwnProperty(id))
+        toReturn.set(5, restrictedNicknames[id])
+
+    doc = await serverIcon.get()
+    let restrictedIcon = await doc.data().restricted
+    if (restrictedIcon.hasOwnProperty(id))
+        toReturn.set(6, restrictedIcon)
+
+    doc = await serverName.get()
+    let restrictedName = await doc.data().restricted
+    if (restrictedName.hasOwnProperty(id))
+        toReturn.set(7, restrictedName)    
+        
+    return toReturn
+}
+
 module.exports = {
+    getMarketMessage : getMarketMessage,
+    updateMarketMessage : updateMarketMessage,
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,
@@ -166,6 +348,15 @@ module.exports = {
     addCurrency : addCurrency,
     removeCurrency : removeCurrency,
     removeCum : removeCum,
+    updateBadges : updateBadges,
+    getBadges : getBadges,
+    editBadges : editBadges,
+    updateRoles : updateRoles,
     getRestrictedNicknames : getRestrictedNicknames,
-    updateRestrictedNicknames : updateRestrictedNicknames
+    updateRestrictedNicknames : updateRestrictedNicknames,
+    getRestrictedServerName : getRestrictedServerName,
+    updateRestrictedServerName : updateRestrictedServerName,
+    getRestrictedServerIcon : getRestrictedServerIcon,
+    updateRestrictedServerIcon : updateRestrictedServerIcon,
+    getAllSubscriptions : getAllSubscriptions,
 }
