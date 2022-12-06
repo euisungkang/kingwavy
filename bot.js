@@ -25,8 +25,6 @@ client.login(process.env.BOT_TOKEN_KW)
 client.on('ready', async () => {
     console.log("help pls oh god")
 
-    //console.log(await database.getAllSubscriptions('237018129664966656'))
-
     client.user.setActivity("$guide", { type: ActivityType.Listening })
 
     // Wavy Guild

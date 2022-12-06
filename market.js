@@ -150,6 +150,9 @@ async function processProduct(user, channel, logs, guild, productID) {
         //Custom Role Tier 2
         //Custom Role Tier 3
 
+        // Check if user is high enough tier
+        
+
         await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
     
         let filter = (m) => m.author.id == user.id
