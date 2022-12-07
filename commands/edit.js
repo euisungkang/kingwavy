@@ -85,7 +85,7 @@ async function editCommand(client, msg) {
         await msg.author.send({ content: "Your $edit request is cancelled.\nFeel free to type $edit in any text channel if you change your mind"})
         return false
     } else if (reactionName == '👑') {
-        embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom role**" })
+        embed2.addFields({ name: "\u200B", value: "You have chosen to edit/upgrade a **custom role**" })
 
         let role = subscriptions.get(rolePurchased)
         let roleOBJ = await wavy.roles.fetch(role.id).catch(err => console.log(err))
@@ -93,9 +93,9 @@ async function editCommand(client, msg) {
         embed2.addFields(
             { name: "Your editable role:",
               value: "Tier: **" + role.tier + "**\nName: **" + role.name + "**\nColor: " + role.color },
-            { name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>) or the **color** (<:srsly:1002091997970042920>)?" }
+            { name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>) the **color** (<:srsly:1002091997970042920>)?" }
         )
-
+            //STUB
         let featureMSG = await msg.author.send({ embeds: [embed2] })
         featureMSG.react("<:shek:968122117453393930>")
         featureMSG.react("<:srsly:1002091997970042920>")

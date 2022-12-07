@@ -52,6 +52,12 @@ client.on('ready', async () => {
 
 let prefix = '$'
 
+client.on('guildMemberAdd', member => {
+    console.log('User ' + member.user.username + ' has joined the server!');
+    let role = member.guild.roles.cache.find(role => role.id == "812926342249185320")
+    member.roles.add(role);
+});
+
 client.on('messageCreate', message => {
     if (!message.content.startsWith(prefix)) return;
 

@@ -146,12 +146,25 @@ async function processProduct(user, channel, logs, guild, productID) {
     let members = guild.members
 
     if (productID >= 1 && productID <= 3) {
-        //Custom Role Tier 1
-        //Custom Role Tier 2
-        //Custom Role Tier 3
+
+        let target = await members.fetch(user.id, { force: true })
+
+        if (database.hasCustomRole(user.id)) {
+            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            return false
+        }
 
         // Check if user is high enough tier
-        
+        if (productID == 1 && !target.roles.cache.has('687840476744908815')) {
+            await channel.send({ content: "You have to be of at least <@&687840476744908815> rank to purchase a **Tier 3 Custom Role**" })
+            return false
+        } else if (productID == 2 && !target.roles.cache.has('812983666136842241')) {
+            await channel.send({ content: "You have to be of at least <@&812983666136842241> rank to purchase a **Tier 2 Custom Role**" })
+            return false
+        } else if (productID == 3 && !target.roles.cache.has('812926342249185320')) {
+            await channel.send({ content: "You have to be of at least <@&812926342249185320> rank to purchase a **Tier 1 Custom Role**" })
+            return false
+        }
 
         await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
     
@@ -179,21 +192,22 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         // Configure pos based on tier of product
         let pos
+        let tier
         if (productID == 1) {
             //Wavy Role
             let wavyRole = await guild.roles.fetch('687840476744908815')
             pos = wavyRole.rawPosition - 1
-
+            tier = 3
         } else if (productID == 2) {
             //Groovy Role
             let groovyRole = await guild.roles.fetch('812983666136842241')
             pos = groovyRole.rawPosition - 1
-
+            tier = 2
         } else {
             // Aesthetic Role
             let aesthethicRole = await guild.roles.fetch('812926342249185320')
             pos = aesthethicRole.rawPosition - 1
-
+            tier = 1
         }
 
         let role = await guild.roles.create({
@@ -203,16 +217,19 @@ async function processProduct(user, channel, logs, guild, productID) {
             permissions: [],
             position: pos,
             mentionable: true,
-            
         })
 
-        let target = await members.fetch(user.id, { force: true })
         target.roles.add(role)
 
-        console.log("Tier " + productID + " role has been created for " + user.username + " called " + roleName +
+        await channel.send({ content: "**Creating Custom Tier " + tier + " Role...**\nKeep in mind you can edit or upgrade your custom role tier, if eligible, using the $edit command" })
+
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(5000);
+
+        console.log("Tier " + tier + " role has been created for " + user.username + " called " + roleName +
         "\nBadge Color: " + roleColor)
 
-        database.updateRoles(user.id, role, productID)
+        database.updateRoles(user.id, role, tier)
 
         return true
 

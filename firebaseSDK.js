@@ -95,17 +95,20 @@ async function addCurrency(user, amount) {
 
   let userDB = db.collection('wallets').doc(id);
   let aggregate_amount;
+  let history = 0
 
   const doc = await userDB.get();
   if (doc.exists) {
       aggregate_amount = doc.data().currency + amount;
+      history = doc.data().history + amount
       console.log(doc.data());
   }
 
   await userDB.update({
       userID: id,
       name: name,
-      currency: aggregate_amount
+      currency: aggregate_amount,
+      history: history
   }).then(() => {
       console.log("Document written successfully");
   }).catch(err => {
@@ -297,6 +300,14 @@ async function updateRoles(id, role, tier) {
     })
 }
 
+async function hasCustomRole(id) {
+    let userDB = db.collection('market').doc('roles')
+    const doc = await userDB.get()
+    let roles = await doc.data().roles
+
+    return roles.has(id)
+}
+
 async function getAllSubscriptions(id) {
     let userDB = db.collection('market')
     const roles = userDB.doc('roles')
@@ -352,6 +363,7 @@ module.exports = {
     getBadges : getBadges,
     editBadges : editBadges,
     updateRoles : updateRoles,
+    hasCustomRole : hasCustomRole,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,
     getRestrictedServerName : getRestrictedServerName,
