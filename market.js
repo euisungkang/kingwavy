@@ -149,7 +149,7 @@ async function processProduct(user, channel, logs, guild, productID) {
 
         let target = await members.fetch(user.id, { force: true })
 
-        if (database.hasCustomRole(user.id)) {
+        if (await database.hasCustomRole(user.id)) {
             await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
             return false
         }
@@ -165,6 +165,8 @@ async function processProduct(user, channel, logs, guild, productID) {
             await channel.send({ content: "You have to be of at least <@&812926342249185320> rank to purchase a **Tier 1 Custom Role**" })
             return false
         }
+
+        //STUB: If User is higher rank than tier purchased, then try again with appropriate tier
 
         await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
     

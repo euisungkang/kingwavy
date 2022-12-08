@@ -93,14 +93,15 @@ async function editCommand(client, msg) {
         embed2.addFields(
             { name: "Your editable role:",
               value: "Tier: **" + role.tier + "**\nName: **" + role.name + "**\nColor: " + role.color },
-            { name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>) the **color** (<:srsly:1002091997970042920>)?" }
+            { name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>), the **color** (<:srsly:1002091997970042920>), or upgrade your role tier (<:PikaO:804086658000748584>)?" }
         )
-            //STUB
+        
         let featureMSG = await msg.author.send({ embeds: [embed2] })
         featureMSG.react("<:shek:968122117453393930>")
         featureMSG.react("<:srsly:1002091997970042920>")
+        featureMSG.react("<:PikaO:804086658000748584>")
 
-        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly') &&
+        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly' || reaction.emoji.name == 'PikaO') &&
                                       user.id != '813021543998554122'
 
         reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 })
@@ -128,8 +129,6 @@ async function editCommand(client, msg) {
 
             await msg.author.send({ content: "Successfully edited the name of your custom role (tier " + role.tier + ") to " + role.name})
 
-
-
         } else if (reactionName == 'srsly') {
             optionMSG = await msg.author.send({ content: "Current role hexcode color: " + role.color + "\nWhat do you want to change the color to? Enter a valid hexcode." +
                                                             "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>" })
@@ -148,6 +147,39 @@ async function editCommand(client, msg) {
             await database.updateRoles(msg.author.id, role, role.tier)
 
             await msg.author.send({ content: "Successfully edited the color of your custom role (tier " + role.tier + ") to " + role.color})
+        
+        } else if (reactionName == 'PikaO') {
+            let target = await wavy.members.fetch(msg.author.id, { force: true })
+
+            if (tier == 3 && target.roles.cache.has('687840476744908815')) {
+                await channel.send({ content: "You are already of rank <@&687840476744908815>, and have the highest custom role tier." })
+            } else if (tier == 1 && !target.roles.cache.has('812926342249185320')) {
+                await channel.send({ content: "You have to be of at least <@&812926342249185320> rank to upgrade to a **Tier 1 Custom Role**" })
+                return false
+            } else if (tier == 2 && !target.roles.cache.has('812983666136842241')) {
+                await channel.send({ content: "You have to be of at least <@&812983666136842241> rank to upgrade to a **Tier 2 Custom Role**" })
+                return false
+            } else if (tier == 3 && !target.roles.cache.has('687840476744908815')) {
+                await channel.send({ content: "You have to be of at least <@&687840476744908815> rank to upgrade a **Tier 3 Custom Role**" })
+                return false
+            }
+
+            let productID;
+            let products = await database.getProducts()
+
+            if (tier == 2)
+                productID = 2
+            else if (tier == 1)
+                productID = 3
+                
+
+            let priceDifference = products[productID - 1].price - products[productID].price
+            console.log(priceDifference)
+
+            optionMSG = await msg.author.send({ content: "An upgrade from Tier **" + tier + "** to Tier **" + (tier + 1) + 
+                                                         "** will cost you **" + priceDifference + "**<:HentaiCoin:814968693981184030>" })
+
+            //STUB: Continue development of tier upgrade
         }
 
     } else if (reactionName == 'wavyheart') {
@@ -334,8 +366,6 @@ async function editCommand(client, msg) {
 
         return true
 
-        // STUB: Continue Development
-
     } else if (reactionName == '💎') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit the **server name**" })
 
@@ -366,9 +396,6 @@ async function editCommand(client, msg) {
 
         await msg.author.send({ content: "Successfully edited server name from **" + oldName + "** to **" + newServerName + "**"})
     }
-
-    // Resolve Request
-    // Update database and appropriate server features
 }
 
 async function validInput(channel, input, max) {

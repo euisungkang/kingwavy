@@ -305,7 +305,11 @@ async function hasCustomRole(id) {
     const doc = await userDB.get()
     let roles = await doc.data().roles
 
-    return roles.has(id)
+    console.log(roles)
+    console.log(typeof roles)
+    console.log(roles.hasOwnProperty(id))
+
+    return roles.hasOwnProperty(id)
 }
 
 async function getAllSubscriptions(id) {

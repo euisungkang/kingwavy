@@ -118,7 +118,7 @@ async function test() {
             }
         }
     }
-    if (changed == nicknames)
+    if (changed != nicknames)
         await database.updateRestrictedNicknames(nicknames)
 
     console.log("Inspecting Server Name")
