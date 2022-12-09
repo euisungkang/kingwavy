@@ -37,7 +37,7 @@ async function awaitMarketReaction(message, channel, logs, guild, filter) {
     console.log("awaiting market reaction")
     let user;
 
-    await message.awaitReactions({ filter, max: 1 })
+    await message.awaitReactions({ filter, max: 1, time: 30000 }).catch(err => console.log(err))
     .then(async collected => {
         user = collected.first().users.cache.last()
         await message.reactions.cache.find(r => r.emoji.id == '814968693981184030').users.remove(user)
@@ -106,7 +106,7 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     confirmation.react('❌')
     
     const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != '813021543998554122'
-    let reaction = await confirmation.awaitReactions({filter, max: 1 })
+    let reaction = await confirmation.awaitReactions({ filter, max: 1, time: 30000 }).catch(err => console.log(err))
 
     let emoji = reaction.first().emoji.name
 
@@ -145,95 +145,60 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
 async function processProduct(user, channel, logs, guild, productID) {
     let members = guild.members
 
-    if (productID >= 1 && productID <= 3) {
-
+    if (productID == 1) {
         let target = await members.fetch(user.id, { force: true })
 
         if (await database.hasCustomRole(user.id)) {
             await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
             return false
-        }
-
-        // Check if user is high enough tier
-        if (productID == 1 && !target.roles.cache.has('687840476744908815')) {
+        } else if (!target.roles.cache.has('687840476744908815')) {
             await channel.send({ content: "You have to be of at least <@&687840476744908815> rank to purchase a **Tier 3 Custom Role**" })
             return false
-        } else if (productID == 2 && !target.roles.cache.has('812983666136842241')) {
-            await channel.send({ content: "You have to be of at least <@&812983666136842241> rank to purchase a **Tier 2 Custom Role**" })
+        }
+
+        return await processRoleRequest(channel, guild, target, productID)
+
+    } else if (productID == 2) {
+        let target = await members.fetch(user.id, { force: true })
+
+        if (await database.hasCustomRole(user.id)) {
+            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
             return false
-        } else if (productID == 3 && !target.roles.cache.has('812926342249185320')) {
-            await channel.send({ content: "You have to be of at least <@&812926342249185320> rank to purchase a **Tier 1 Custom Role**" })
+
+        // If user has lower rank than purchased tier            
+        } else if (!target.roles.cache.has('812983666136842241')) {
+            await channel.send({ content: "You have to be of at least <@&812983666136842241> rank to purchase a **Tier 3 Custom Role**" })
+            return false
+
+        // If user has higher rank than the purchased tier
+        } else if (target.roles.cache.has('687840476744908815')) {
+            await channel.send({ content: "Seems like you are of rank <@&687840476744908815>\n" +
+                                          "You are eligible to purchase a Tier 3 Custom Role. Please try again with the appropriate product" })
             return false
         }
 
-        //STUB: If User is higher rank than tier purchased, then try again with appropriate tier
+        return await processRoleRequest(channel, guild, target, productID)
 
-        await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
-    
-        let filter = (m) => m.author.id == user.id
-        let roleName = await awaitResponse(channel, filter, 30000, true);
-        if (roleName == false)
+    } else if (productID == 3) {
+        let target = await members.fetch(user.id, { force: true })
+
+        if (await database.hasCustomRole(user.id)) {
+            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
             return false
 
-        await channel.send({ content: "Your role will be called " + roleName +
-                                      "\n\nNow pick your role's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
-                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
-
-        let roleColor = await awaitResponse(channel, filter, 90000, false)
-        if (roleColor == false)
+        // If user has lower rank than purchased tier
+        } else if (!target.roles.cache.has('812926342249185320')) {
+            await channel.send({ content: "You have to be of at least <@&812926342249185320> rank to purchase a **Tier 3 Custom Role**" })
             return false
-        
-        // Check if roleColor is a valid hex code
-        if (/^#[0-9A-F]{6}$/i.test(roleColor) || /^[0-9A-F]{6}$/i.test(roleColor)) {
-            if (/^[0-9A-F]{6}$/i.test(roleColor))
-                roleColor = "#" + roleColor
-        } else {
-            await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
-            return false;
+
+        // If user has higher rank than purchased tier
+        } else if (target.roles.cache.has('812983666136842241')) {
+            await channel.send({ content: "Seems like you are of **at least** rank <@&812983666136842241>\n" +
+                                          "You are eligible to purchase a Tier 2 Custom Role. Please try again with the appropriate product" })
+            return false
         }
 
-        // Configure pos based on tier of product
-        let pos
-        let tier
-        if (productID == 1) {
-            //Wavy Role
-            let wavyRole = await guild.roles.fetch('687840476744908815')
-            pos = wavyRole.rawPosition - 1
-            tier = 3
-        } else if (productID == 2) {
-            //Groovy Role
-            let groovyRole = await guild.roles.fetch('812983666136842241')
-            pos = groovyRole.rawPosition - 1
-            tier = 2
-        } else {
-            // Aesthetic Role
-            let aesthethicRole = await guild.roles.fetch('812926342249185320')
-            pos = aesthethicRole.rawPosition - 1
-            tier = 1
-        }
-
-        let role = await guild.roles.create({
-            name: roleName,
-            color: roleColor,
-            hoist: true,
-            permissions: [],
-            position: pos,
-            mentionable: true,
-        })
-
-        target.roles.add(role)
-
-        await channel.send({ content: "**Creating Custom Tier " + tier + " Role...**\nKeep in mind you can edit or upgrade your custom role tier, if eligible, using the $edit command" })
-
-        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
-        await wait(5000);
-
-        console.log("Tier " + tier + " role has been created for " + user.username + " called " + roleName +
-        "\nBadge Color: " + roleColor)
-
-        database.updateRoles(user.id, role, tier)
-
-        return true
+        return await processRoleRequest(channel, guild, target, productID)
 
     } else if (productID == 4) {
         //Badge/Title
@@ -557,6 +522,77 @@ async function validHexColor(channel, color) {
         await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
         return false
     }
+}
+
+async function processRoleRequest(channel, guild, target, productID) {
+    let user = target.user
+
+    await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
+    
+    let filter = (m) => m.author.id == user.id
+    let roleName = await awaitResponse(channel, filter, 30000, true);
+    if (roleName == false)
+        return false
+
+    await channel.send({ content: "Your role will be called " + roleName +
+                                  "\n\nNow pick your role's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
+                                  "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
+
+    let roleColor = await awaitResponse(channel, filter, 90000, false)
+    if (roleColor == false)
+        return false
+    
+    // Check if roleColor is a valid hex code
+    if (/^#[0-9A-F]{6}$/i.test(roleColor) || /^[0-9A-F]{6}$/i.test(roleColor)) {
+        if (/^[0-9A-F]{6}$/i.test(roleColor))
+            roleColor = "#" + roleColor
+    } else {
+        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+        return false;
+    }
+
+    // Configure pos based on tier of product
+    let pos
+    let tier
+    if (productID == 1) {
+        //Wavy Role
+        let wavyRole = await guild.roles.fetch('687840476744908815')
+        pos = wavyRole.rawPosition + 0.5
+        tier = 3
+    } else if (productID == 2) {
+        //Groovy Role
+        let groovyRole = await guild.roles.fetch('812983666136842241')
+        pos = groovyRole.rawPosition + 0.5
+        tier = 2
+    } else {
+        // Aesthetic Role
+        let aesthethicRole = await guild.roles.fetch('812926342249185320')
+        pos = aesthethicRole.rawPosition + 0.5
+        tier = 1
+    }
+
+    let role = await guild.roles.create({
+        name: roleName,
+        color: roleColor,
+        hoist: true,
+        permissions: [],
+        position: pos,
+        mentionable: true,
+    })
+
+    target.roles.add(role)
+
+    await channel.send({ content: "**Creating Custom Tier " + tier + " Role...**\nKeep in mind you can edit or upgrade your custom role tier, if eligible, using the $edit command" })
+
+    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+    await wait(5000);
+
+    console.log("Tier " + tier + " role has been created for " + user.username + " called " + roleName +
+    "\nBadge Color: " + roleColor)
+
+    database.updateRoles(user.id, role, tier)
+
+    return true
 }
 
 module.exports = {

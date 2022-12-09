@@ -160,7 +160,7 @@ async function editCommand(client, msg) {
                 await channel.send({ content: "You have to be of at least <@&812983666136842241> rank to upgrade to a **Tier 2 Custom Role**" })
                 return false
             } else if (tier == 3 && !target.roles.cache.has('687840476744908815')) {
-                await channel.send({ content: "You have to be of at least <@&687840476744908815> rank to upgrade a **Tier 3 Custom Role**" })
+                await channel.send({ content: "You have to be of <@&687840476744908815> rank to upgrade a **Tier 3 Custom Role**" })
                 return false
             }
 
@@ -172,14 +172,34 @@ async function editCommand(client, msg) {
             else if (tier == 1)
                 productID = 3
                 
-
             let priceDifference = products[productID - 1].price - products[productID].price
             console.log(priceDifference)
 
+            let wallet = await database.getCum(msg.author.id)
+
             optionMSG = await msg.author.send({ content: "An upgrade from Tier **" + tier + "** to Tier **" + (tier + 1) + 
-                                                         "** will cost you **" + priceDifference + "**<:HentaiCoin:814968693981184030>" })
+                                                         "** will cost you **" + priceDifference + "**<:HentaiCoin:814968693981184030>\n" +
+                                                         "You currently have **" + wallet + "**<:HentaiCoin:814968693981184030>\n" +
+                                                         "Continue with the transaction?" })
+
+            optionMSG.react('✅')
+            optionMSG.react('❌')             
+            
+            const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != '813021543998554122'
+            let reaction = await optionMSG.awaitReactions({ filter, max: 1 })
+
+            let emoji = reaction.first().emoji.name
+
+            if (emoji == '❌')
+                await channel.send({ content: "Got it, your tier upgrade won't go through" })
+            else if (emoji == '✅') {
+                
+            }
+
 
             //STUB: Continue development of tier upgrade
+
+
         }
 
     } else if (reactionName == 'wavyheart') {

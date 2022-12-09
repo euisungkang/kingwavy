@@ -287,8 +287,6 @@ async function updateRoles(id, role, tier) {
         tier: tier
     }
 
-    console.log(newRole)
-
     roles[id] = [newRole]
 
     await userDB.update({
@@ -304,11 +302,7 @@ async function hasCustomRole(id) {
     let userDB = db.collection('market').doc('roles')
     const doc = await userDB.get()
     let roles = await doc.data().roles
-
-    console.log(roles)
-    console.log(typeof roles)
-    console.log(roles.hasOwnProperty(id))
-
+    
     return roles.hasOwnProperty(id)
 }
 
