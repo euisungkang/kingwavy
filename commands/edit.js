@@ -149,18 +149,20 @@ async function editCommand(client, msg) {
             await msg.author.send({ content: "Successfully edited the color of your custom role (tier " + role.tier + ") to " + role.color})
         
         } else if (reactionName == 'PikaO') {
+            let tier = role.tier
             let target = await wavy.members.fetch(msg.author.id, { force: true })
 
             if (tier == 3 && target.roles.cache.has('687840476744908815')) {
-                await channel.send({ content: "You are already of rank <@&687840476744908815>, and have the highest custom role tier." })
+                await msg.author.send({ content: "You are already of rank 𝓦𝓪𝓿𝔂, and have the highest custom role tier." })
+                return false
             } else if (tier == 1 && !target.roles.cache.has('812926342249185320')) {
-                await channel.send({ content: "You have to be of at least <@&812926342249185320> rank to upgrade to a **Tier 1 Custom Role**" })
+                await msg.author.send({ content: "You have to be of at least 𝕒 𝕖 𝕤 𝕥 𝕙 𝕖 𝕥 𝕚 𝕔 rank to upgrade to a **Tier 1 Custom Role**" })
                 return false
             } else if (tier == 2 && !target.roles.cache.has('812983666136842241')) {
-                await channel.send({ content: "You have to be of at least <@&812983666136842241> rank to upgrade to a **Tier 2 Custom Role**" })
+                await msg.author.send({ content: "You have to be of at least 𝒢𝓇❀❁𝓋𝓎 rank to upgrade to a **Tier 2 Custom Role**" })
                 return false
             } else if (tier == 3 && !target.roles.cache.has('687840476744908815')) {
-                await channel.send({ content: "You have to be of <@&687840476744908815> rank to upgrade a **Tier 3 Custom Role**" })
+                await msg.author.send({ content: "You have to be of 𝓦𝓪𝓿𝔂 rank to upgrade a **Tier 3 Custom Role**" })
                 return false
             }
 
@@ -177,6 +179,8 @@ async function editCommand(client, msg) {
 
             let wallet = await database.getCum(msg.author.id)
 
+
+
             optionMSG = await msg.author.send({ content: "An upgrade from Tier **" + tier + "** to Tier **" + (tier + 1) + 
                                                          "** will cost you **" + priceDifference + "**<:HentaiCoin:814968693981184030>\n" +
                                                          "You currently have **" + wallet + "**<:HentaiCoin:814968693981184030>\n" +
@@ -186,18 +190,26 @@ async function editCommand(client, msg) {
             optionMSG.react('❌')             
             
             const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != '813021543998554122'
-            let reaction = await optionMSG.awaitReactions({ filter, max: 1 })
+            let reaction = await optionMSG.awaitReactions({ filter, max: 1, time: 10000 })
+
+            if (reaction.size < 1) {
+                await msg.author.send({ content: "Request Timed Out. Try requesting a new $edit, and try again. *Boomer Fingers*" })
+                return false
+            }
 
             let emoji = reaction.first().emoji.name
 
-            if (emoji == '❌')
-                await channel.send({ content: "Got it, your tier upgrade won't go through" })
-            else if (emoji == '✅') {
+            if (emoji == '❌') {
+                await msg.author.send({ content: "Got it, your tier upgrade won't go through" })
+                return false
+            } else if (emoji == '✅') {
                 
             }
 
 
             //STUB: Continue development of tier upgrade
+
+            //BUG: How to resolve a false promise in js
 
 
         }

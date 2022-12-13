@@ -37,7 +37,7 @@ async function awaitMarketReaction(message, channel, logs, guild, filter) {
     console.log("awaiting market reaction")
     let user;
 
-    await message.awaitReactions({ filter, max: 1, time: 30000 }).catch(err => console.log(err))
+    await message.awaitReactions({ filter, max: 1 }).catch(err => console.log(err))
     .then(async collected => {
         user = collected.first().users.cache.last()
         await message.reactions.cache.find(r => r.emoji.id == '814968693981184030').users.remove(user)
