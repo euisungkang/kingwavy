@@ -273,6 +273,23 @@ async function editBadges(id, bs) {
     })
 }
 
+async function editRole(id, role) {
+    let userDB = db.collection('market').doc('roles')
+    const doc = await userDB.get()
+
+    let roles = await doc.data().roles
+
+    roles[id] = role
+
+    await userDB.update({
+        roles: roles
+    }).then(() => {
+        console.log("Document written succesfully: Custom Role Updated (Whole)")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function updateRoles(id, role, tier) {
     let userDB = db.collection('market').doc('roles')
 
@@ -287,7 +304,7 @@ async function updateRoles(id, role, tier) {
         tier: tier
     }
 
-    roles[id] = [newRole]
+    roles[id] = newRole
 
     await userDB.update({
         roles: roles
@@ -318,11 +335,8 @@ async function getAllSubscriptions(id) {
 
     let doc = await roles.get()
     let purchasedRoles = await doc.data().roles
-    if (purchasedRoles.hasOwnProperty(id)) {
-        purchasedRoles[id].forEach(role => {
-            toReturn.set(role.tier, role)
-        })
-    }
+    if (purchasedRoles.hasOwnProperty(id))
+        toReturn.set(purchasedRoles[id].tier, purchasedRoles[id])
 
     doc = await badges.get()
     let purchasedBadges = await doc.data().badges
@@ -347,6 +361,14 @@ async function getAllSubscriptions(id) {
     return toReturn
 }
 
+async function getRolePositions() {
+    let userDB = db.collection('market').doc('meta')
+    const doc = await userDB.get()
+    let roles = await doc.data().rolePositions
+
+    return roles
+}
+
 module.exports = {
     getMarketMessage : getMarketMessage,
     updateMarketMessage : updateMarketMessage,
@@ -361,6 +383,7 @@ module.exports = {
     getBadges : getBadges,
     editBadges : editBadges,
     updateRoles : updateRoles,
+    editRole: editRole,
     hasCustomRole : hasCustomRole,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,
@@ -369,4 +392,5 @@ module.exports = {
     getRestrictedServerIcon : getRestrictedServerIcon,
     updateRestrictedServerIcon : updateRestrictedServerIcon,
     getAllSubscriptions : getAllSubscriptions,
+    getRolePositions : getRolePositions
 }

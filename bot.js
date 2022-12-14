@@ -50,6 +50,18 @@ client.on('ready', async () => {
     vote.votingSystemPP(client)
 });
 
+// async function deleteAll(channel) {
+//     let filtered;
+//     do {
+//         let mktID = await database.getMarketMessage()
+//         let fetched = await channel.messages.fetch({ limit: 100 })
+//         filtered = fetched.filter(msg => msg.id != mktID)
+//         //console.log(filtered)
+//         if (filtered.size > 0)
+//             channel.bulkDelete(filtered)
+//     } while(filtered.size >= 2)
+// }
+
 let prefix = '$'
 
 client.on('guildMemberAdd', member => {

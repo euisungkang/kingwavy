@@ -4,6 +4,7 @@ const market = require('../market')
 
 async function editCommand(client, msg) {
     const wavy = await client.guilds.resolve('687839393444397105')
+    let mkt_logs = await client.channels.fetch('1038822879787229214')
 
     let replyChannel = await client.channels.fetch(msg.channel.id)
     replyChannel.send({ content: "Check your DMs <@" + msg.author.id + ">\n" + 
@@ -71,8 +72,12 @@ async function editCommand(client, msg) {
                                         reaction.emoji.name == '❌') &&
                                         user.id != '813021543998554122'
     
-    let reaction = await initialMSG.awaitReactions({ filter, max: 1, time: 30000 })
-    .catch(err => console.log(err))
+    let reaction = await initialMSG.awaitReactions({ filter, max: 1, time: 30000 }).catch(err => console.log(err))
+
+    if (reaction.size < 1) {
+        await msg.author.send({ content: "Request Timed Out. Try requesting a new $edit, and try again. *Boomer Fingers*" })
+        return false
+    }
 
     let reactionName = reaction.first().emoji.name
 
@@ -106,6 +111,11 @@ async function editCommand(client, msg) {
 
         reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 })
         .catch(err => console.log(err))
+
+        if (reaction.size < 1) {
+            await msg.author.send({ content: "Request Timed Out. Try requesting a new $edit, and try again. *Boomer Fingers*" })
+            return false
+        }
 
         reactionName = reaction.first().emoji.name
         filter = (m) => m.author.id == msg.author.id
@@ -149,19 +159,21 @@ async function editCommand(client, msg) {
             await msg.author.send({ content: "Successfully edited the color of your custom role (tier " + role.tier + ") to " + role.color})
         
         } else if (reactionName == 'PikaO') {
+            let positions = await database.getRolePositions();
+
             let tier = role.tier
             let target = await wavy.members.fetch(msg.author.id, { force: true })
 
-            if (tier == 3 && target.roles.cache.has('687840476744908815')) {
+            if (tier == 3 && target.roles.cache.has(positions[3])) {
                 await msg.author.send({ content: "You are already of rank 𝓦𝓪𝓿𝔂, and have the highest custom role tier." })
                 return false
-            } else if (tier == 1 && !target.roles.cache.has('812926342249185320')) {
+            } else if (tier == 1 && !target.roles.cache.has(positions[1])) {
                 await msg.author.send({ content: "You have to be of at least 𝕒 𝕖 𝕤 𝕥 𝕙 𝕖 𝕥 𝕚 𝕔 rank to upgrade to a **Tier 1 Custom Role**" })
                 return false
-            } else if (tier == 2 && !target.roles.cache.has('812983666136842241')) {
+            } else if (tier == 2 && !target.roles.cache.has(positions[2])) {
                 await msg.author.send({ content: "You have to be of at least 𝒢𝓇❀❁𝓋𝓎 rank to upgrade to a **Tier 2 Custom Role**" })
                 return false
-            } else if (tier == 3 && !target.roles.cache.has('687840476744908815')) {
+            } else if (tier == 3 && !target.roles.cache.has(positions[3])) {
                 await msg.author.send({ content: "You have to be of 𝓦𝓪𝓿𝔂 rank to upgrade a **Tier 3 Custom Role**" })
                 return false
             }
@@ -170,16 +182,20 @@ async function editCommand(client, msg) {
             let products = await database.getProducts()
 
             if (tier == 2)
-                productID = 2
+                productID = 1
             else if (tier == 1)
-                productID = 3
-                
+                productID = 2
+            
             let priceDifference = products[productID - 1].price - products[productID].price
-            console.log(priceDifference)
 
             let wallet = await database.getCum(msg.author.id)
 
-
+            if (priceDifference > wallet) {
+                msg.author.send({ content: "You currently have " + wallet + "<:HentaiCoin:814968693981184030>\n" +
+                                           "Custom Role upgrade from Tier " + tier + " to Tier " + (tier + 1) + " costs " + priceDifference + "<:HentaiCoin:814968693981184030>\n" +
+                                           "Try again when you're not broke" })
+                return false
+            }
 
             optionMSG = await msg.author.send({ content: "An upgrade from Tier **" + tier + "** to Tier **" + (tier + 1) + 
                                                          "** will cost you **" + priceDifference + "**<:HentaiCoin:814968693981184030>\n" +
@@ -187,7 +203,7 @@ async function editCommand(client, msg) {
                                                          "Continue with the transaction?" })
 
             optionMSG.react('✅')
-            optionMSG.react('❌')             
+            optionMSG.react('❌')
             
             const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != '813021543998554122'
             let reaction = await optionMSG.awaitReactions({ filter, max: 1, time: 10000 })
@@ -203,14 +219,33 @@ async function editCommand(client, msg) {
                 await msg.author.send({ content: "Got it, your tier upgrade won't go through" })
                 return false
             } else if (emoji == '✅') {
-                
+
+                let pivotOBJ = await wavy.roles.fetch(positions[tier + 1]).catch(err => console.log(err))
+
+                let pos = pivotOBJ.position + 0.5
+
+                role.tier = tier + 1
+
+                roleOBJ.edit({ position: pos }).then(res => console.log("Edited role " + res.name + " to position " + res.position))
+
+                await database.editRole(msg.author.id, role)
+
+                //await database.removeCum(msg.author, priceDifference)
+
+                await msg.author.send({ content: "Successfully upgraded your " + role.name + " role from Tier " + tier + " to Tier " + (tier + 1) + 
+                                                 "\nChanges will be actualized shortly"})
+            
+                await mkt_logs.send({ content: "```" + new Date().toUTCString() +
+                    "\nProduct: $edit Custom Role Tier Upgrade" +
+                    "\nID: " + msg.author.id +
+                    "\nName: " + msg.author.username +
+                    "\nTier: " + tier + " -> " + (tier + 1) +
+                    "\nPrice: " + priceDifference +
+                    "\nCurrency Before: " + wallet +
+                    "\nRemaining: " + (wallet - priceDifference) +
+                    "```"
+                })
             }
-
-
-            //STUB: Continue development of tier upgrade
-
-            //BUG: How to resolve a false promise in js
-
 
         }
 
@@ -251,8 +286,13 @@ async function editCommand(client, msg) {
         filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly') &&
                                       user.id != '813021543998554122'
 
-        reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 })
-                         .catch(err => console.log(err))
+        reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 }).catch(err => console.log(err))
+        
+        if (reaction.size < 1) {
+            await msg.author.send({ content: "Request Timed Out. Try requesting a new $edit, and try again. *Boomer Fingers*" })
+            return false
+        }
+
         reactionName = reaction.first().emoji.name
 
         filter = (m) => m.author.id == msg.author.id
@@ -276,8 +316,6 @@ async function editCommand(client, msg) {
             await database.editBadges(msg.author.id, badges)
 
             await msg.author.send({ content: "Successfully edited the name of your custom badge to " + badge.name})
-
-
 
         } else if (reactionName == 'srsly') {
             optionMSG = await msg.author.send({ content: "Current badge hexcode color: " + badge.color + "\nWhat do you want to change the color to? Enter a valid hexcode." +

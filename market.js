@@ -117,7 +117,7 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     } else {
         let remaining = wallet - product.price
 
-        if (await processProduct(user, channel, logs, guild, productID) == false)
+        if (await processProduct(user, channel, guild, productID) == false)
             return
 
         console.log(user.id + "      " + user.username + " purchased " + product.name +
@@ -142,7 +142,7 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     return
 }
 
-async function processProduct(user, channel, logs, guild, productID) {
+async function processProduct(user, channel, guild, productID) {
     let members = guild.members
 
     if (productID == 1) {
