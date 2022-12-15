@@ -98,7 +98,7 @@ async function editCommand(client, msg) {
         embed2.addFields(
             { name: "Your editable role:",
               value: "Tier: **" + role.tier + "**\nName: **" + role.name + "**\nColor: " + role.color },
-            { name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>), the **color** (<:srsly:1002091997970042920>), or upgrade your role tier (<:PikaO:804086658000748584>)?" }
+            { name: "\u200B", value: "What do you wish to edit?\n**name** (<:shek:968122117453393930>)\n**color** (<:srsly:1002091997970042920>)\n**upgrade role tier** (<:PikaO:804086658000748584>)?" }
         )
         
         let featureMSG = await msg.author.send({ embeds: [embed2] })
@@ -274,7 +274,7 @@ async function editCommand(client, msg) {
         } else
             featureMSG = await msg.author.send({ embeds: [embed2] })
         
-        embed2.addFields({ name: "\u200B", value: "Do you wish to edit the **name** (<:shek:968122117453393930>) or the **color** (<:srsly:1002091997970042920>)?" })
+        embed2.addFields({ name: "\u200B", value: "What do you wish to edit?\n**name** (<:shek:968122117453393930>)\n**color** (<:srsly:1002091997970042920>)\n**icon** (<:PikaO:804086658000748584>)?" })
 
         let badge = badges[badgeID]
         let badgeOBJ = await wavy.roles.fetch(badges[badgeID].id).catch(err => console.log(err))
@@ -282,8 +282,9 @@ async function editCommand(client, msg) {
         featureMSG.edit({ embeds: [embed2] })
         featureMSG.react("<:shek:968122117453393930>")
         featureMSG.react("<:srsly:1002091997970042920>")
+        featureMSG.react("<:PikaO:804086658000748584>")
 
-        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly') &&
+        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly' || reaction.emoji.name == 'PikaO') &&
                                       user.id != '813021543998554122'
 
         reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 }).catch(err => console.log(err))
@@ -337,6 +338,13 @@ async function editCommand(client, msg) {
             await database.editBadges(msg.author.id, badges)
 
             await msg.author.send({ content: "Successfully edited the color of your custom badge to " + badge.color})
+        
+        } else if (reactionName == 'PikaO') {
+            
+            let optionMSG = await msg.author.send({ content: "Upload any custom icon for your badge.\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+                                                             "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
+        
+            return await processIcon(msg.author, optionMSG.channel, badgeOBJ, 64, 256000)
         }
 
     } else if (reactionName == 'groovy') {
@@ -482,6 +490,56 @@ async function validInput(channel, input, max) {
         await channel.send({ content: "Input Error: The ID you inputted is too damn high (what the fuck?). Try sending a new request in market next time"})
         return false
     }
+
+    return true
+}
+
+async function processIcon(user, channel, OBJ, dim, size) {
+
+    filter = (m) => user.id == m.author.id
+    let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
+    .catch(err => {
+        console.log(err)
+        return null;
+    })
+    if (collected == false) {
+        await user.send({ content: "Request timed out. Try sending a new $edit request next time "})
+        return false
+    }
+
+    let newIcon = collected.first().attachments.values().next().value
+
+    if ((!("contentType" in newIcon)) ||
+        newIcon.contentType != 'image/png' &&
+        newIcon.contentType != 'image/jpeg') {
+
+        await user.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for icons*" })
+        return false
+    }
+
+    // Convert byte size to presentable format
+    let formatSize = ""
+    if (size >= 1000000)
+        formatSize = (Math.trunc(newIcon.size/1000000)).toString() + "MB"
+    else
+        formatSize = (Math.trunc(newIcon.size/1000)).toString() + "KB"
+
+    // Conditions for dimension and file size of server icon
+    if (newIcon.height != dim && newIcon.width != dim) {
+        await user.send({ content: "Icon dimensions **must** be **" + dim + "x" + dim + "** pixels\n" + 
+                                "The image you uploaded has dimensions of " + newIcon.width + "x" + newIcon.height +
+                                "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+        return false
+    } else if (newIcon.size >= size) {
+        await user.send({ content: "Icon size **must** be **less than 256KB**" +
+                                "The image you uploaded is of size " + formatSize +
+                                "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+        return false
+    }
+
+    OBJ.edit({ icon: newIcon.url }).then(res => console.log("Edited " + res.id + " icon to " + res.icon))
+
+    await user.send({ content: "Successfully edited your custom icon\nChanges will be actualized shortly" })
 
     return true
 }

@@ -222,7 +222,40 @@ async function processProduct(user, channel, guild, productID) {
         if (!badgeColor)
             return false
 
-        // STUB: Add support for Role Icons
+        await channel.send({ content: "Upload any custom icon for your badge.\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+                                      "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
+
+        filter = (m) => user.id == m.author.id
+        let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
+        .catch(err => {
+            console.log(err)
+            return null;
+        })
+        if (collected == null)
+            return false
+
+        let badgeIcon = collected.first().attachments.values().next().value
+
+        if ((!("contentType" in badgeIcon)) ||
+            badgeIcon.contentType != 'image/png' &&
+            badgeIcon.contentType != 'image/jpeg') {
+            
+            await channel.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for badge icons*" })
+            return false
+        }
+
+        // Conditions for dimension and file size of server icon
+        if (badgeIcon.height != 64 && badgeIcon.width != 64) {
+            await channel.send({ content: "Badge icon dimensions **must** be **64x64** pixels\n" + 
+                                          "The image you uploaded has dimensions of " + badgeIcon.width + "x" + badgeIcon.height +
+                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+            return false
+        } else if (badgeIcon.size >= 256000) {
+            await channel.send({ content: "Badge icon size **must** be **less than 256KB**" +
+                                          "The image you uploaded is of size " + Math.trunc(badgeIcon.size/1000000) +
+                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+            return false
+        }
 
         let badge = await guild.roles.create({
             name: badgeName,
@@ -231,7 +264,7 @@ async function processProduct(user, channel, guild, productID) {
             permissions: [],
             position: 0,
             mentionable: true,
-            
+            icon: badgeIcon.url
         })
 
         let target = await members.fetch(user.id, { force: true })
@@ -322,11 +355,11 @@ async function processProduct(user, channel, guild, productID) {
             return false
         }
 
-        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are strictly **512x512** pixels and **8MB** max size" +
+        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are **strictly** **512x512** pixels and **8MB** max size" +
                                       "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
 
         let filter = (m) => m.author.id == user.id
-        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
         .catch(err => {
             console.log(err)
             return null;
