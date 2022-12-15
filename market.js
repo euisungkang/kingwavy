@@ -252,7 +252,7 @@ async function processProduct(user, channel, guild, productID) {
             return false
         } else if (badgeIcon.size >= 256000) {
             await channel.send({ content: "Badge icon size **must** be **less than 256KB**" +
-                                          "The image you uploaded is of size " + Math.trunc(badgeIcon.size/1000000) +
+                                          "The image you uploaded is of size " + Math.trunc(badgeIcon.size/1000) + "KB" +
                                           "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
             return false
         }
@@ -377,7 +377,7 @@ async function processProduct(user, channel, guild, productID) {
             return false
         } else if (serverIcon.size >= 8000000) {
             await channel.send({ content: "The server icon size **must** be **less than 8MB**" +
-                                          "The image you uploaded is of size " + Math.trunc(serverIcon.size/1000000) +
+                                          "The image you uploaded is of size " + Math.trunc(serverIcon.size/1000000) + "MB" +
                                           "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
             return false
         }
