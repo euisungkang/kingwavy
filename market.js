@@ -323,6 +323,8 @@ async function processProduct(user, channel, guild, productID) {
         if (collected == null)
             return false
 
+        // STUB: Input filtering for gif png jpg
+
         let serverIcon = collected.first().attachments.values().next().value
 
         // Conditions for dimension and file size of server icon
@@ -564,7 +566,7 @@ async function getRoleCreationInput(channel, user, option) {
     else
         formatSize = (Math.trunc(icon.size/1000)).toString() + "KB"
 
-    // Conditions for dimension and file size of server icon
+    // Conditions for dimension and file size of icon
     if (icon.height != 64 && icon.width != 64) {
         await channel.send({ content: "Icon dimensions **must** be **" + "64x64" + "** pixels\n" + 
                                       "The image you uploaded has dimensions of " + icon.width + "x" + icon.height +

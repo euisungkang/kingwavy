@@ -431,6 +431,8 @@ async function editCommand(client, msg) {
         
         newIcon = newIcon.first().attachments.values().next().value
 
+        //STUB Input filtering for gif png jpg
+
         if (newIcon.height != 512 && newIcon.width != 512) {
             await msg.author.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
                                           "The image you uploaded has dimensions of " + newIcon.width + "x" + newIcon.height +
