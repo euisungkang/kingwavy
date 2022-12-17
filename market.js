@@ -201,79 +201,35 @@ async function processProduct(user, channel, guild, productID) {
         return await processRoleRequest(channel, guild, target, productID)
 
     } else if (productID == 4) {
-        //Badge/Title
+
         await channel.send({ content: "What do you want your custom badge to be called?\n*Badges are displayed on your profile like a role, but won't affect the way you're displayed in the server*" })
 
-        let filter = (m) => m.author.id == user.id;
-        let badgeName = await awaitResponse(channel, filter, 30000, true);
-        if (badgeName == false)
+        let badgeInput = await getRoleCreationInput(channel, user, "badge")
+        if (badgeInput === false)
             return false
-        
-        await channel.send({ content: "Your badge will be called: " + badgeName + 
-                                      "\n\nNow pick your badge's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
-                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
-
-        let badgeColor = await awaitResponse(channel, filter, 90000, false);
-        if (badgeColor == false)
-            return false;
-
-        // Check if badgeColor is a valid hex code
-        badgeColor = await validHexColor(channel, badgeColor)
-        if (!badgeColor)
-            return false
-
-        await channel.send({ content: "Upload any custom icon for your badge.\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
-                                      "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
-
-        filter = (m) => user.id == m.author.id
-        let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
-        .catch(err => {
-            console.log(err)
-            return null;
-        })
-        if (collected == null)
-            return false
-
-        let badgeIcon = collected.first().attachments.values().next().value
-
-        if ((!("contentType" in badgeIcon)) ||
-            badgeIcon.contentType != 'image/png' &&
-            badgeIcon.contentType != 'image/jpeg') {
-            
-            await channel.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for badge icons*" })
-            return false
-        }
-
-        // Conditions for dimension and file size of server icon
-        if (badgeIcon.height != 64 && badgeIcon.width != 64) {
-            await channel.send({ content: "Badge icon dimensions **must** be **64x64** pixels\n" + 
-                                          "The image you uploaded has dimensions of " + badgeIcon.width + "x" + badgeIcon.height +
-                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
-            return false
-        } else if (badgeIcon.size >= 256000) {
-            await channel.send({ content: "Badge icon size **must** be **less than 256KB**" +
-                                          "The image you uploaded is of size " + Math.trunc(badgeIcon.size/1000) + "KB" +
-                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
-            return false
-        }
 
         let badge = await guild.roles.create({
-            name: badgeName,
-            color: badgeColor,
+            name: badgeInput[0],
+            color: badgeInput[1],
             hoist: false,
             permissions: [],
             position: 0,
             mentionable: true,
-            icon: badgeIcon.url
+            icon: badgeInput[2].url
         })
 
         let target = await members.fetch(user.id, { force: true })
         target.roles.add(badge)
 
-        console.log("Badge has been created for " + user.username + " called " + badgeName +
-                    "\nBadge Color: " + badgeColor)
+        await channel.send({ content: "**Creating Custom Badge...**\nKeep in mind you can edit your custom badge(s) using the $edit command" })
+
+        console.log("Badge has been created for " + user.username + " called " + badgeInput[0] +
+                    "\nBadge Color: " + badgeInput[1])
 
         database.updateBadges(user.id, badge, productID)
+
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(5000);
 
         return true
 
@@ -557,32 +513,75 @@ async function validHexColor(channel, color) {
     }
 }
 
-async function processRoleRequest(channel, guild, target, productID) {
-    let user = target.user
+async function getRoleCreationInput(channel, user, option) {
 
-    await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
-    
-    let filter = (m) => m.author.id == user.id
-    let roleName = await awaitResponse(channel, filter, 30000, true);
-    if (roleName == false)
+    let filter = (m) => m.author.id == user.id;
+    let name = await awaitResponse(channel, filter, 30000, true);
+    if (name == false)
         return false
-
-    await channel.send({ content: "Your role will be called " + roleName +
-                                  "\n\nNow pick your role's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
+    
+    await channel.send({ content: "Your " + option + " will be called: " + name + 
+                                  "\n\nNow pick your " + option + "'s color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
                                   "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
 
-    let roleColor = await awaitResponse(channel, filter, 90000, false)
-    if (roleColor == false)
-        return false
-    
-    // Check if roleColor is a valid hex code
-    if (/^#[0-9A-F]{6}$/i.test(roleColor) || /^[0-9A-F]{6}$/i.test(roleColor)) {
-        if (/^[0-9A-F]{6}$/i.test(roleColor))
-            roleColor = "#" + roleColor
-    } else {
-        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+    let color = await awaitResponse(channel, filter, 90000, false);
+    if (color == false)
         return false;
+
+    // Check if color is a valid hex code
+    color = await validHexColor(channel, color)
+    if (!color)
+        return false
+
+    await channel.send({ content: "Upload any custom icon for your " + option + ".\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+                                  "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
+
+    filter = (m) => user.id == m.author.id
+    let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
+    .catch(err => {
+        console.log(err)
+        return null;
+    })
+    if (collected == null) {
+        await channel.send({ content: "Request timed out. Closing Market session" })
+        return false
     }
+
+    let icon = collected.first().attachments.values().next().value
+
+    if ((!("contentType" in icon)) ||
+        icon.contentType != 'image/png' &&
+        icon.contentType != 'image/jpeg') {
+        
+        await channel.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for" + option + " icons*" })
+        return false
+    }
+
+    // Convert byte size to presentable format
+    let formatSize = ""
+    if (icon.size >= 1000000)
+        formatSize = (Math.trunc(icon.size/1000000)).toString() + "MB"
+    else
+        formatSize = (Math.trunc(icon.size/1000)).toString() + "KB"
+
+    // Conditions for dimension and file size of server icon
+    if (icon.height != 64 && icon.width != 64) {
+        await channel.send({ content: "Icon dimensions **must** be **" + "64x64" + "** pixels\n" + 
+                                      "The image you uploaded has dimensions of " + icon.width + "x" + icon.height +
+                                      "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+        return false
+    } else if (icon.size >= 256000) {
+        await channel.send({ content: "Icon size **must** be **less than **256KB**" + 
+                                      "The image you uploaded is of size " + formatSize +
+                                      "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+        return false
+    }
+
+    return [name, color, icon]
+}
+
+async function processRoleRequest(channel, guild, target, productID) {
+    let user = target.user
 
     // Configure pos based on tier of product
     let pos
@@ -590,40 +589,47 @@ async function processRoleRequest(channel, guild, target, productID) {
     if (productID == 1) {
         //Wavy Role
         let wavyRole = await guild.roles.fetch('687840476744908815')
-        pos = wavyRole.rawPosition + 0.5
+        pos = wavyRole.position + 1
         tier = 3
     } else if (productID == 2) {
         //Groovy Role
         let groovyRole = await guild.roles.fetch('812983666136842241')
-        pos = groovyRole.rawPosition + 0.5
+        pos = groovyRole.position + 1
         tier = 2
     } else {
         // Aesthetic Role
         let aesthethicRole = await guild.roles.fetch('812926342249185320')
-        pos = aesthethicRole.rawPosition + 0.5
+        pos = aesthethicRole.position + 1
         tier = 1
     }
 
+    await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
+
+    let roleInput = await getRoleCreationInput(channel, user, "Tier " + (tier).toString() + " Custom Role")
+    if (roleInput === false)
+        return false
+
     let role = await guild.roles.create({
-        name: roleName,
-        color: roleColor,
+        name: roleInput[0],
+        color: roleInput[1],
         hoist: true,
         permissions: [],
         position: pos,
         mentionable: true,
+        icon: roleInput[2].url
     })
 
     target.roles.add(role)
 
     await channel.send({ content: "**Creating Custom Tier " + tier + " Role...**\nKeep in mind you can edit or upgrade your custom role tier, if eligible, using the $edit command" })
 
-    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
-    await wait(5000);
-
-    console.log("Tier " + tier + " role has been created for " + user.username + " called " + roleName +
-    "\nBadge Color: " + roleColor)
+    console.log("Tier " + tier + " role has been created for " + user.username + " called " + roleInput[0] +
+    "\nBadge Color: " + roleInput[1])
 
     database.updateRoles(user.id, role, tier)
+
+    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+    await wait(5000);
 
     return true
 }
@@ -634,5 +640,6 @@ module.exports = {
     sendRestrictMessage : sendRestrictMessage,
     sendUnrestrictMessage : sendUnrestrictMessage,
     awaitResponse : awaitResponse,
-    validHexColor : validHexColor
+    validHexColor : validHexColor,
+    getRoleCreationInput : getRoleCreationInput
 }

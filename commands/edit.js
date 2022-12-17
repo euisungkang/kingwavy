@@ -98,15 +98,18 @@ async function editCommand(client, msg) {
         embed2.addFields(
             { name: "Your editable role:",
               value: "Tier: **" + role.tier + "**\nName: **" + role.name + "**\nColor: " + role.color },
-            { name: "\u200B", value: "What do you wish to edit?\n**name** (<:shek:968122117453393930>)\n**color** (<:srsly:1002091997970042920>)\n**upgrade role tier** (<:PikaO:804086658000748584>)?" }
+            { name: "\u200B", value: "What do you wish to edit?\n**name** (<:shek:968122117453393930>)\n**color** (<:srsly:1002091997970042920>)\n**role icon** (<:PikaO:804086658000748584>)\n**upgrade role tier** (<:habey:968127993551683594>)?" }
         )
         
         let featureMSG = await msg.author.send({ embeds: [embed2] })
         featureMSG.react("<:shek:968122117453393930>")
         featureMSG.react("<:srsly:1002091997970042920>")
         featureMSG.react("<:PikaO:804086658000748584>")
+        featureMSG.react("<:habey:968127993551683594>")
 
-        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly' || reaction.emoji.name == 'PikaO') &&
+
+        filter = (reaction, user) => (reaction.emoji.name == 'shek' || reaction.emoji.name == 'srsly' ||
+                                      reaction.emoji.name == 'PikaO' || reaction.emoji.name == 'habey') &&
                                       user.id != '813021543998554122'
 
         reaction = await featureMSG.awaitReactions({ filter, max: 1, time: 30000 })
@@ -159,6 +162,13 @@ async function editCommand(client, msg) {
             await msg.author.send({ content: "Successfully edited the color of your custom role (tier " + role.tier + ") to " + role.color})
         
         } else if (reactionName == 'PikaO') {
+
+            let optionMSG = await msg.author.send({ content: "Upload any icon for your custom role.\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+                                                             "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
+        
+            return await processIcon(msg.author, optionMSG.channel, roleOBJ)
+
+        } else if (reactionName == 'habey') {
             let positions = await database.getRolePositions();
 
             let tier = role.tier
@@ -222,7 +232,7 @@ async function editCommand(client, msg) {
 
                 let pivotOBJ = await wavy.roles.fetch(positions[tier + 1]).catch(err => console.log(err))
 
-                let pos = pivotOBJ.position + 0.5
+                let pos = pivotOBJ.position + 1
 
                 role.tier = tier + 1
 
@@ -274,7 +284,7 @@ async function editCommand(client, msg) {
         } else
             featureMSG = await msg.author.send({ embeds: [embed2] })
         
-        embed2.addFields({ name: "\u200B", value: "What do you wish to edit?\n**name** (<:shek:968122117453393930>)\n**color** (<:srsly:1002091997970042920>)\n**icon** (<:PikaO:804086658000748584>)?" })
+        embed2.addFields({ name: "\u200B", value: "What do you wish to edit?\n**name** (<:shek:968122117453393930>)\n**color** (<:srsly:1002091997970042920>)\n**badge icon** (<:PikaO:804086658000748584>)?" })
 
         let badge = badges[badgeID]
         let badgeOBJ = await wavy.roles.fetch(badges[badgeID].id).catch(err => console.log(err))
@@ -344,7 +354,7 @@ async function editCommand(client, msg) {
             let optionMSG = await msg.author.send({ content: "Upload any custom icon for your badge.\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
                                                              "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
         
-            return await processIcon(msg.author, optionMSG.channel, badgeOBJ, 64, 256000)
+            return await processIcon(msg.author, optionMSG.channel, badgeOBJ)
         }
 
     } else if (reactionName == 'groovy') {
@@ -494,7 +504,7 @@ async function validInput(channel, input, max) {
     return true
 }
 
-async function processIcon(user, channel, OBJ, dim, size) {
+async function processIcon(user, channel, OBJ) {
 
     filter = (m) => user.id == m.author.id
     let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
@@ -507,11 +517,11 @@ async function processIcon(user, channel, OBJ, dim, size) {
         return false
     }
 
-    let newIcon = collected.first().attachments.values().next().value
+    let icon = collected.first().attachments.values().next().value
 
-    if ((!("contentType" in newIcon)) ||
-        newIcon.contentType != 'image/png' &&
-        newIcon.contentType != 'image/jpeg') {
+    if ((!("contentType" in icon)) ||
+        icon.contentType != 'image/png' &&
+        icon.contentType != 'image/jpeg') {
 
         await user.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for icons*" })
         return false
@@ -519,25 +529,25 @@ async function processIcon(user, channel, OBJ, dim, size) {
 
     // Convert byte size to presentable format
     let formatSize = ""
-    if (size >= 1000000)
-        formatSize = (Math.trunc(newIcon.size/1000000)).toString() + "MB"
+    if (icon.size >= 1000000)
+        formatSize = (Math.trunc(icon.size/1000000)).toString() + "MB"
     else
-        formatSize = (Math.trunc(newIcon.size/1000)).toString() + "KB"
+        formatSize = (Math.trunc(icon.size/1000)).toString() + "KB"
 
     // Conditions for dimension and file size of server icon
-    if (newIcon.height != dim && newIcon.width != dim) {
-        await user.send({ content: "Icon dimensions **must** be **" + dim + "x" + dim + "** pixels\n" + 
-                                "The image you uploaded has dimensions of " + newIcon.width + "x" + newIcon.height +
+    if (icon.height != 64 && icon.width != 64) {
+        await user.send({ content: "Icon dimensions **must** be **64x64** pixels\n" + 
+                                "The image you uploaded has dimensions of " + icon.width + "x" + icon.height +
                                 "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
         return false
-    } else if (newIcon.size >= size) {
+    } else if (icon.size >= 256000) {
         await user.send({ content: "Icon size **must** be **less than 256KB**" +
                                 "The image you uploaded is of size " + formatSize +
                                 "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
         return false
     }
 
-    OBJ.edit({ icon: newIcon.url }).then(res => console.log("Edited " + res.id + " icon to " + res.icon))
+    OBJ.edit({ icon: icon.url }).then(res => console.log("Edited " + res.id + " icon to " + res.icon))
 
     await user.send({ content: "Successfully edited your custom icon\nChanges will be actualized shortly" })
 
