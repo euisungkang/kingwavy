@@ -25,7 +25,7 @@ async function updateMarketMessage(msg) {
     await meta.update({
         message: msg
     }).then(() => {
-        console.log("Document written successfully: Market Message");
+        console.log("[DATABASE] Document written successfully: Market Message");
     }).catch(err => {
         console.log("Error: " + err);
     })
@@ -110,7 +110,7 @@ async function addCurrency(user, amount) {
       currency: aggregate_amount,
       history: history
   }).then(() => {
-      console.log("Document written successfully");
+      console.log("[DATABASE] Document written successfully");
   }).catch(err => {
       console.log("Error: " + err);
   })
@@ -134,7 +134,7 @@ async function removeCurrency(user, amount) {
       name: name,
       currency: aggregate_amount
   }).then(() => {
-      console.log("Document written successfully");
+      console.log("[DATABASE] Document written successfully");
   }).catch(err => {
       console.log("Error: " + err);
   })
@@ -157,7 +157,7 @@ async function removeCum(user, amount) {
         name: name,
         cum: aggregate_amount
     }).then(() => {
-        console.log("Document written successfully")
+        console.log("[DATABASE] Document written successfully")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -177,7 +177,7 @@ async function updateRestrictedNicknames(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Restricted Nicknames")
+        console.log("[DATABASE] Document written successfully: Restricted Nicknames")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -196,7 +196,7 @@ async function updateRestrictedServerName(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Server Name")
+        console.log("[DATABASE] Document written successfully: Server Name")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -215,7 +215,7 @@ async function updateRestrictedServerIcon(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Server Icon")
+        console.log("[DATABASE] Document written successfully: Server Icon")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -250,7 +250,7 @@ async function updateBadges(id, badge) {
     await userDB.update({
         badges: badges
     }).then(() => {
-        console.log("Document written successfully: Custom Badge")
+        console.log("[DATABASE] Document written successfully: Custom Badge")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -267,7 +267,7 @@ async function editBadges(id, bs) {
     await userDB.update({
         badges: badges
     }).then(() => {
-        console.log("Document written successfully: Custom Badges Updated (Whole)")
+        console.log("[DATABASE] Document written successfully: Custom Badges Updated (Whole)")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -284,7 +284,7 @@ async function editRole(id, role) {
     await userDB.update({
         roles: roles
     }).then(() => {
-        console.log("Document written succesfully: Custom Role Updated (Whole)")
+        console.log("[DATABASE] Document written succesfully: Custom Role Updated (Whole)")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -309,7 +309,7 @@ async function updateRoles(id, role, tier) {
     await userDB.update({
         roles: roles
     }).then(() => {
-        console.log("Document written successfully: Custom Role")
+        console.log("[DATABASE] Document written successfully: Custom Role")
     }).catch(err => {
         console.log("Error: " + err)
     })

@@ -311,7 +311,7 @@ async function processProduct(user, channel, guild, productID) {
             return false
         }
 
-        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are **strictly** **512x512** pixels and **8MB** max size" +
+        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions **must** be of **1:1** aspect ratio and **8MB** max size" +
                                       "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
 
         let filter = (m) => m.author.id == user.id
@@ -322,21 +322,36 @@ async function processProduct(user, channel, guild, productID) {
         })
         if (collected == null)
             return false
-
-        // STUB: Input filtering for gif png jpg
-
+        
         let serverIcon = collected.first().attachments.values().next().value
 
-        // Conditions for dimension and file size of server icon
-        if (serverIcon.height != 512 && serverIcon.width != 512) {
-            await channel.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
-                                          "The image you uploaded has dimensions of " + serverIcon.width + "x" + serverIcon.height +
-                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+        // Input filtering for gif png jpg
+        if ((!("contentType" in serverIcon)) ||
+            serverIcon.contentType != 'image/png' &&
+            serverIcon.contentType != 'image/jpeg' &&
+            serverIcon.contentType != 'image/gif') {
+            
+            await channel.send({ content: "Please enter a valid image type: PNG, JPG, GIF" })
             return false
+        }
+
+        let toDivide = await gcd(serverIcon.height, serverIcon.width)
+        let aspectRatio = (serverIcon.width / toDivide).toString() + ":" + (serverIcon.height / toDivide).toString()
+
+        // Conditions for dimension and file size of server icon
+        if (aspectRatio != "1:1") {
+            await channel.send({ content: "The server icon dimensions **must** be of **1:1** aspect ratio\n" + 
+                                          "The image you uploaded has an aspect ratio of **" + aspectRatio + "**" +
+                                          "\n\nResize your **image** with Image Resizer: <https://imageresizer.com/>" +
+                                          "\nResize a **gif** with GIF Resizer: <https://ezgif.com/resize>" +
+                                          "\nCrop a **gif** with GIF Cropper: <https://ezgif.com/crop>" })
+            return false
+
         } else if (serverIcon.size >= 8000000) {
             await channel.send({ content: "The server icon size **must** be **less than 8MB**" +
                                           "The image you uploaded is of size " + Math.trunc(serverIcon.size/1000000) + "MB" +
-                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+                                          "\n\nCompress your **image** with Image Compressor: <https://imagecompressor.com/>" +
+                                          "\nCompress your **gif** with GIF Compressor: <https://ezgif.com/optimize>"})
             return false
         }
         
@@ -510,7 +525,8 @@ async function validHexColor(channel, color) {
             color = "#" + color
         return color
     } else {
-        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6 digits of 0-9 or A-F (i.e #CEA2D7 **or** CEA2D7)" +
+                                      "\nUse this online color picker to get your desired code:* <https://htmlcolorcodes.com/color-picker/>" })
         return false
     }
 }
@@ -535,7 +551,7 @@ async function getRoleCreationInput(channel, user, option) {
     if (!color)
         return false
 
-    await channel.send({ content: "Upload any custom icon for your " + option + ".\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+    await channel.send({ content: "Upload any custom icon for your " + option + ".\nAccepted dimensions **must** be of **1:1** aspect ratio and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
                                   "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
 
     filter = (m) => user.id == m.author.id
@@ -559,6 +575,9 @@ async function getRoleCreationInput(channel, user, option) {
         return false
     }
 
+    let toDivide = await gcd(icon.height, icon.width)
+    let aspectRatio = (icon.width / toDivide).toString() + ":" + (icon.height / toDivide).toString()
+
     // Convert byte size to presentable format
     let formatSize = ""
     if (icon.size >= 1000000)
@@ -567,9 +586,9 @@ async function getRoleCreationInput(channel, user, option) {
         formatSize = (Math.trunc(icon.size/1000)).toString() + "KB"
 
     // Conditions for dimension and file size of icon
-    if (icon.height != 64 && icon.width != 64) {
-        await channel.send({ content: "Icon dimensions **must** be **" + "64x64" + "** pixels\n" + 
-                                      "The image you uploaded has dimensions of " + icon.width + "x" + icon.height +
+    if (aspectRatio != "1:1") {
+        await channel.send({ content: "Icon dimensions **must** be of **1:1** aspect ratio\n" + 
+                                      "The image you uploaded has an aspect ratio of **" + aspectRatio + "**" +
                                       "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
         return false
     } else if (icon.size >= 256000) {
@@ -634,6 +653,12 @@ async function processRoleRequest(channel, guild, target, productID) {
     await wait(5000);
 
     return true
+}
+
+function gcd (a,b) {
+    if (b == 0)
+        return a
+    return gcd (b, a % b)
 }
 
 module.exports = {

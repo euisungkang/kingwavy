@@ -163,7 +163,7 @@ async function editCommand(client, msg) {
         
         } else if (reactionName == 'PikaO') {
 
-            let optionMSG = await msg.author.send({ content: "Upload any icon for your custom role.\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+            let optionMSG = await msg.author.send({ content: "Upload any icon for your custom role.\nAccepted dimensions **must** be of **1:1** aspect ratio and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
                                                              "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
         
             return await processIcon(msg.author, optionMSG.channel, roleOBJ)
@@ -351,7 +351,7 @@ async function editCommand(client, msg) {
         
         } else if (reactionName == 'PikaO') {
             
-            let optionMSG = await msg.author.send({ content: "Upload any custom icon for your badge.\nAccepted dimensions are **strictly** **64x64** pixels and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+            let optionMSG = await msg.author.send({ content: "Upload any custom icon for your badge.\nAccepted dimensions **must** be of **1:1** and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
                                                              "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
         
             return await processIcon(msg.author, optionMSG.channel, badgeOBJ)
@@ -417,7 +417,7 @@ async function editCommand(client, msg) {
             { name: "\u200B", value: "**Current Server Icon URL: **" + serverIcon.newIcon }
         )
 
-        let featureMSG = await msg.author.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are strictly **512x512** pixels and **8MB** max size" +
+        let featureMSG = await msg.author.send({ content: "Upload the new server icon as an image.\nAccepted dimensions **must** be of **1:1** and **8MB** max size" +
                                                           "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
 
         let filter = (m) => m.author.id == msg.author.id
@@ -431,17 +431,32 @@ async function editCommand(client, msg) {
         
         newIcon = newIcon.first().attachments.values().next().value
 
-        //STUB Input filtering for gif png jpg
-
-        if (newIcon.height != 512 && newIcon.width != 512) {
-            await msg.author.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
-                                          "The image you uploaded has dimensions of " + newIcon.width + "x" + newIcon.height +
-                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+        // Input filtering for gif png jpg
+        if ((!("contentType" in newIcon)) ||
+            newIcon.contentType != 'image/png' &&
+            newIcon.contentType != 'image/jpeg' &&
+            newIcon.contentType != 'image/gif') {
+            
+            await channel.send({ content: "Please enter a valid image type: PNG, JPG, GIF" })
             return false
+        }
+
+        let toDivide = await gcd(newIcon.height, newIcon.width)
+        let aspectRatio = (newIcon.width / toDivide).toString() + ":" + (newIcon.height / toDivide).toString()
+
+        if (aspectRatio != "1:1") {
+            await msg.author.send({ content: "The server icon dimensions **must** be of **1:1** aspect ratio\n" + 
+                                          "The image you uploaded has an aspect ratio of **" + aspectRatio + "**" +
+                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>" +
+                                          "\nResize a **gif** with GIF Resizer: <https://ezgif.com/resize>" +
+                                          "\nCrop a **gif** with GIF Cropper: <https://ezgif.com/crop>" })
+            return false
+
         } else if (newIcon.size >= 8000000) {
             await msg.author.send({ content: "The server icon size **must** be **less than 8MB**" +
                                           "The image you uploaded is of size " + Math.trunc(newIcon.size/1000000) +
-                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+                                          "\n\nCompress your **image** with Image Compressor: <https://imagecompressor.com/>" +
+                                          "\nCompress your **gif** with GIF Compressor: <https://ezgif.com/optimize>"})
             return false
         }
 
@@ -521,6 +536,7 @@ async function processIcon(user, channel, OBJ) {
 
     let icon = collected.first().attachments.values().next().value
 
+    // Input filtering for gif png jpg
     if ((!("contentType" in icon)) ||
         icon.contentType != 'image/png' &&
         icon.contentType != 'image/jpeg') {
@@ -528,6 +544,9 @@ async function processIcon(user, channel, OBJ) {
         await user.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for icons*" })
         return false
     }
+
+    let toDivide = await gcd(icon.height, icon.width)
+    let aspectRatio = (icon.width / toDivide).toString() + ":" + (icon.height / toDivide).toString()
 
     // Convert byte size to presentable format
     let formatSize = ""
@@ -537,15 +556,16 @@ async function processIcon(user, channel, OBJ) {
         formatSize = (Math.trunc(icon.size/1000)).toString() + "KB"
 
     // Conditions for dimension and file size of server icon
-    if (icon.height != 64 && icon.width != 64) {
-        await user.send({ content: "Icon dimensions **must** be **64x64** pixels\n" + 
-                                "The image you uploaded has dimensions of " + icon.width + "x" + icon.height +
-                                "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+    if (aspectRatio != "1:1") {
+        await user.send({ content: "Icon dimensions **must** be of **1:1** aspect ratio\n" + 
+                                "The image you uploaded has an aspect ratio of **" + aspectRatio + "**" +
+                                "\n\nResize your **image** with Image Resizer: <https://imageresizer.com/>"})
         return false
     } else if (icon.size >= 256000) {
         await user.send({ content: "Icon size **must** be **less than 256KB**" +
                                 "The image you uploaded is of size " + formatSize +
-                                "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+                                "\n\nCompress your **image** with Image Compressor: <https://imagecompressor.com/>" +
+                                "\nCompress your **gif** with GIF Compressor: <https://ezgif.com/optimize>"})
         return false
     }
 
@@ -554,6 +574,12 @@ async function processIcon(user, channel, OBJ) {
     await user.send({ content: "Successfully edited your custom icon\nChanges will be actualized shortly" })
 
     return true
+}
+
+function gcd (a,b) {
+    if (b == 0)
+        return a
+    return gcd (b, a % b)
 }
 
 module.exports = {
