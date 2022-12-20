@@ -123,7 +123,7 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
         console.log(user.id + "      " + user.username + " purchased " + product.name +
         "     Before: " + wallet + " After: " + remaining)
 
-        //database.removeCum(user, product.price)
+        database.removeCum(user, product.price)
 
         await channel.send({ content: "Your order was successful.\n**" + product.name + "** has been purchased.\n"
                                 + "Your remaining **cumulative** balance is: " + remaining + " <:HentaiCoin:814968693981184030>" })

@@ -1,4 +1,5 @@
 const admin = require("firebase-admin");
+const fs = require('fs')
 
 admin.initializeApp({
     credential: admin.credential.cert(
@@ -31,27 +32,82 @@ async function updateMarketMessage(msg) {
     })
 }
 
+async function getLDBHistoryMessage() {
+    let meta = await db.collection('leaderboards').doc('meta')
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().history
+    
+    return false
+}
+
+async function updateLDBHistoryMessage(msg) {
+    let meta = await db.collection('leaderboards').doc('meta')
+
+    await meta.update({
+        history: msg
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: LDB History Message")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function getLDBBoostMessage() {
+    let meta = await db.collection('leaderboards').doc('meta')
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().boost
+
+    return false
+}
+
+async function updateLDBBoostMessage(msg) {
+    let meta = await db.collection('leaderboards').doc('meta')
+
+    await meta.update({
+        boost: msg
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: LDB Boost Message")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function getTopWallets() {
     const wallets = await db.collection('wallets').get();
     let walletmap = new Map();
 
-    wallets.docs.map(doc => {
+    await wallets.docs.map(doc => {
       //King wavy
       if(doc.data().userID != '813021543998554122')
-        walletmap.set(doc.data().userID, doc.data().cum);
+        walletmap.set(doc.data().userID, doc.data().history);
     })
 
-    const sorted = await new Map([...walletmap.entries()].sort((a, b) => b[1] - a[1]));
+    const sorted = await ([...walletmap.values()].sort());
 
-    let index = 0;
+  console.log(sorted)
+
+    await fs.writeFileSync("test.json", JSON.stringify([...sorted]), 'utf-8')
+/*     let index = 0;
     for (let k of sorted.keys()) {
         if (index > 8) {
           sorted.delete(k);
         }
         index++;
-    }
+    } */
 
-    return sorted;
+    let finalMap = new Map()
+    let sliced = Array.from(sorted()).slice(0, 9)
+    await sliced.forEach(k => {
+        finalMap.set(k, sorted.get(k))
+    })
+
+    //BUG FIX LEADERBOARDS
+                 
+    return finalMap;
 }
 
 async function getProducts() {
@@ -372,6 +428,10 @@ async function getRolePositions() {
 module.exports = {
     getMarketMessage : getMarketMessage,
     updateMarketMessage : updateMarketMessage,
+    getLDBHistoryMessage : getLDBHistoryMessage,
+    updateLDBHistoryMessage : updateLDBHistoryMessage,
+    getLDBBoostMessage : getLDBBoostMessage,
+    updateLDBBoostMessage : updateLDBBoostMessage,
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,

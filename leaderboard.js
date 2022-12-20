@@ -5,7 +5,7 @@ async function getEmbedCurr(c) {
     let top5 = await database.getTopWallets();
     let top5Keys = Array.from(top5.keys());
     let top5Values = Array.from(top5.values());
-    // console.log([...top5.entries()]);
+    console.log([...top5.entries()]);
 
     const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')

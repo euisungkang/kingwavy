@@ -240,7 +240,7 @@ async function editCommand(client, msg) {
 
                 await database.editRole(msg.author.id, role)
 
-                //await database.removeCum(msg.author, priceDifference)
+                database.removeCum(msg.author, priceDifference)
 
                 await msg.author.send({ content: "Successfully upgraded your " + role.name + " role from Tier " + tier + " to Tier " + (tier + 1) + 
                                                  "\nChanges will be actualized shortly"})
