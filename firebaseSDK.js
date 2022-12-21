@@ -82,30 +82,18 @@ async function getTopWallets() {
 
     await wallets.docs.map(doc => {
       //King wavy
-      if(doc.data().userID != '813021543998554122')
+      //console.log(typeof doc.data().history)
+      if(doc.data().userID != '813021543998554122') 
         walletmap.set(doc.data().userID, doc.data().history);
     })
 
-    const sorted = await ([...walletmap.values()].sort());
-
-  console.log(sorted)
-
-    await fs.writeFileSync("test.json", JSON.stringify([...sorted]), 'utf-8')
-/*     let index = 0;
-    for (let k of sorted.keys()) {
-        if (index > 8) {
-          sorted.delete(k);
-        }
-        index++;
-    } */
+    const sorted = new Map([...walletmap.entries()].sort((a, b) => b[1] - a[1]));
 
     let finalMap = new Map()
-    let sliced = Array.from(sorted()).slice(0, 9)
+    let sliced = [...sorted.keys()].slice(0, 9)
     await sliced.forEach(k => {
         finalMap.set(k, sorted.get(k))
     })
-
-    //BUG FIX LEADERBOARDS
                  
     return finalMap;
 }
