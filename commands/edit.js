@@ -34,7 +34,7 @@ async function editCommand(client, msg) {
             { name: "React ❌ if you wish to cancel this $edit request", value: "\u200B" }
         )
         await subscriptions.forEach((value, key) => {
-            if (key >= 1 && key <= 3) {
+            if (key >= 0 && key <= 3) {
                 rolePurchased = key
                 embed.addFields({ name: "Editable Role: 👑",
                                   value: "Tier: **" + value.tier + "**\nName: **" + value.name + "**\nColor: " + value.color })
@@ -140,7 +140,7 @@ async function editCommand(client, msg) {
 
             await database.updateRoles(msg.author.id, role, role.tier)
 
-            await msg.author.send({ content: "Successfully edited the name of your custom role (tier " + role.tier + ") to " + role.name})
+            await msg.author.send({ content: "Successfully edited the name of your custom role (Tier " + role.tier + ") to " + role.name})
 
         } else if (reactionName == 'srsly') {
             optionMSG = await msg.author.send({ content: "Current role hexcode color: " + role.color + "\nWhat do you want to change the color to? Enter a valid hexcode." +
@@ -159,7 +159,7 @@ async function editCommand(client, msg) {
 
             await database.updateRoles(msg.author.id, role, role.tier)
 
-            await msg.author.send({ content: "Successfully edited the color of your custom role (tier " + role.tier + ") to " + role.color})
+            await msg.author.send({ content: "Successfully edited the color of your custom role (Tier " + role.tier + ") to " + role.color})
         
         } else if (reactionName == 'PikaO') {
 
@@ -174,27 +174,30 @@ async function editCommand(client, msg) {
             let tier = role.tier
             let target = await wavy.members.fetch(msg.author.id, { force: true })
 
-            if (tier == 3 && target.roles.cache.has(positions[3])) {
-                await msg.author.send({ content: "You are already of rank 𝓦𝓪𝓿𝔂, and have the highest custom role tier." })
+            if (tier == 4 && target.roles.cache.has(positions[4])) {
+                await msg.author.send({ content: "You are already fo rank 𝓡𝓸𝔂𝓪𝓵𝓽𝔂, and have the highest custom role Tier" })
                 return false
-            } else if (tier == 1 && !target.roles.cache.has(positions[1])) {
+            }else if (tier == 1 && !target.roles.cache.has(positions[1])) {
                 await msg.author.send({ content: "You have to be of at least 𝕒 𝕖 𝕤 𝕥 𝕙 𝕖 𝕥 𝕚 𝕔 rank to upgrade to a **Tier 1 Custom Role**" })
                 return false
             } else if (tier == 2 && !target.roles.cache.has(positions[2])) {
                 await msg.author.send({ content: "You have to be of at least 𝒢𝓇❀❁𝓋𝓎 rank to upgrade to a **Tier 2 Custom Role**" })
                 return false
             } else if (tier == 3 && !target.roles.cache.has(positions[3])) {
-                await msg.author.send({ content: "You have to be of 𝓦𝓪𝓿𝔂 rank to upgrade a **Tier 3 Custom Role**" })
+                await msg.author.send({ content: "You have to be of at least 𝓦𝓪𝓿𝔂 rank to upgrade a **Tier 3 Custom Role**" })
+                return false
+            } else if (tier == 4 && !target.roles.cache.has(positions[4])) {
+                await msg.author.send({ content: "You have to be of 𝓡𝓸𝔂𝓪𝓵𝓽𝔂 rank to upgrade to a **TIer 4 Custom Role**" })
                 return false
             }
 
-            let productID;
+            let productID = tier
             let products = await database.getProducts()
-
-            if (tier == 2)
+            
+            if (tier == 1)
+                productID = 3
+            else if (tier == 3)
                 productID = 1
-            else if (tier == 1)
-                productID = 2
             
             let priceDifference = products[productID - 1].price - products[productID].price
 
@@ -256,7 +259,6 @@ async function editCommand(client, msg) {
                     "```"
                 })
             }
-
         }
 
     } else if (reactionName == 'wavyheart') {

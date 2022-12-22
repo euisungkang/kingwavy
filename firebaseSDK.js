@@ -380,10 +380,11 @@ async function getAllSubscriptions(id) {
     let doc = await roles.get()
     let purchasedRoles = await doc.data().roles
     if (purchasedRoles.hasOwnProperty(id))
-        toReturn.set(purchasedRoles[id].tier, purchasedRoles[id])
+        toReturn.set(purchasedRoles[id].tier - 1, purchasedRoles[id])
 
     doc = await badges.get()
     let purchasedBadges = await doc.data().badges
+
     if (purchasedBadges.hasOwnProperty(id))
         toReturn.set(4, purchasedBadges[id])
 
@@ -400,8 +401,8 @@ async function getAllSubscriptions(id) {
     doc = await serverName.get()
     let restrictedName = await doc.data().restricted
     if (restrictedName.hasOwnProperty(id))
-        toReturn.set(7, restrictedName)    
-        
+        toReturn.set(7, restrictedName)   
+
     return toReturn
 }
 

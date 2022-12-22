@@ -61,7 +61,7 @@ async function productPurchase(user, channel, logs, guild) {
 
     //What product does the user want to buy?
     let productID = await awaitResponse(channel, filter, 30000, false)
-    if (productID == false)
+    if (productID === false)
         return
             
     await confirmProduct(channel, logs, productID, guild, user, products)
@@ -85,18 +85,17 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     let productID = Number(message)
 
     // After Input Verification, Check if ID is valid
-    if (productID <= 0 || productID > products.length) {
+    if (productID < 0 || productID > products.length - 1)
         return await channel.send({ content: "The product ID you entered is not valid in the market.\nDouble check the product's ID, and try again" })
-    }
 
-    let product = products[productID - 1]
+    let product = products[productID]
+    console.log(product)
 
     // Edge Cases for Currency Calculation
-    if (wallet < Number(product.price)) {
+    if (wallet < Number(product.price))
         return await channel.send({ content: "You have: " + wallet + " <:HentaiCoin:814968693981184030>\n**" +
                                   product.name + "** costs: " + product.price + " <:HentaiCoin:814968693981184030>\n" +
                                   "Something doesn't add up now does it <:shek:968122117453393930>" })
-    }
 
     // Confirmation message and await reaction response
     let confirmation = await channel.send({ content: "The product you entered is **" + product.name + "**.\n"
@@ -123,20 +122,20 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
         console.log(user.id + "      " + user.username + " purchased " + product.name +
         "     Before: " + wallet + " After: " + remaining)
 
-        database.removeCum(user, product.price)
+        // database.removeCum(user, product.price)
 
         await channel.send({ content: "Your order was successful.\n**" + product.name + "** has been purchased.\n"
                                 + "Your remaining **cumulative** balance is: " + remaining + " <:HentaiCoin:814968693981184030>" })
     
-        await logs.send({ content: "```" + new Date().toUTCString() +
-                        "\nProduct: " + product.description +
-                        "\nID: " + user.id +
-                        "\nName: " + user.username +
-                        "\nPrice: " + product.price +
-                        "\nCurrency Before: " + wallet +
-                        "\nRemaining: " + remaining +
-                        "```"
-        })
+        // await logs.send({ content: "```" + new Date().toUTCString() +
+        //                 "\nProduct: " + product.description +
+        //                 "\nID: " + user.id +
+        //                 "\nName: " + user.username +
+        //                 "\nPrice: " + product.price +
+        //                 "\nCurrency Before: " + wallet +
+        //                 "\nRemaining: " + remaining +
+        //                 "```"
+        // })
     }
 
     return
@@ -145,11 +144,24 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
 async function processProduct(user, channel, guild, productID) {
     let members = guild.members
 
-    if (productID == 1) {
+    if (productID == 0) {
         let target = await members.fetch(user.id, { force: true })
 
         if (await database.hasCustomRole(user.id)) {
-            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            await channel.send({ content: "You seem to have already purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            return false
+        } else if (!target.roles.cache.has('813024016776167485')) {
+            await channel.send({ content: "You have to be of at least <@&813024016776167485> rank to purchase a **Tier 4 Custom Role**"})
+            return false
+        }
+
+        return await processRoleRequest(channel, guild, target, productID)
+
+    } else if (productID == 1) {
+        let target = await members.fetch(user.id, { force: true })
+
+        if (await database.hasCustomRole(user.id)) {
+            await channel.send({ content: "You seem to have already purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
             return false
         } else if (!target.roles.cache.has('687840476744908815')) {
             await channel.send({ content: "You have to be of at least <@&687840476744908815> rank to purchase a **Tier 3 Custom Role**" })
@@ -162,7 +174,7 @@ async function processProduct(user, channel, guild, productID) {
         let target = await members.fetch(user.id, { force: true })
 
         if (await database.hasCustomRole(user.id)) {
-            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            await channel.send({ content: "You seem to have already purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
             return false
 
         // If user has lower rank than purchased tier            
@@ -183,7 +195,7 @@ async function processProduct(user, channel, guild, productID) {
         let target = await members.fetch(user.id, { force: true })
 
         if (await database.hasCustomRole(user.id)) {
-            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            await channel.send({ content: "You seem to have already purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
             return false
 
         // If user has lower rank than purchased tier
@@ -451,15 +463,15 @@ async function getEmbed() {
 
     for (var i = 0; i < products.length; i++) {
         embed.addFields(
-            { name: (i + 1) + ": " + products[i].name, value: products[i].description + "\n**Price: " + products[i].price + "** <:HentaiCoin:814968693981184030>" }
+            { name: i + ": " + products[i].name, value: products[i].description + "\n**Price: " + products[i].price + "** <:HentaiCoin:814968693981184030>" }
         )
         if (i != products.length - 1) {
             embed.addFields(
-                { name: "Product ID: " + (i + 1), value: "\u200B" }
+                { name: "Product ID: " + i, value: "\u200B" }
             )
         } else {
             embed.addFields(
-                { name: "Product ID: " + (i + 1), value: "\u200B" }
+                { name: "Product ID: " + i, value: "\u200B" }
             )
         }
     }
@@ -609,7 +621,12 @@ async function processRoleRequest(channel, guild, target, productID) {
     // Configure pos based on tier of product
     let pos
     let tier
-    if (productID == 1) {
+
+    if (productID == 0) {
+        let royalty = await guild.roles.fetch('813024016776167485')
+        pos = royalty.position + 1
+        tier = 4
+    } else if (productID == 1) {
         //Wavy Role
         let wavyRole = await guild.roles.fetch('687840476744908815')
         pos = wavyRole.position + 1
