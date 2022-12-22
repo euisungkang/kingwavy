@@ -25,8 +25,6 @@ client.login(process.env.BOT_TOKEN_KW)
 client.on('ready', async () => {
     console.log("help pls oh god")
 
-    //console.log(await database.getAllSubscriptions('237018129664966656'))
-
     client.user.setActivity("$guide", { type: ActivityType.Listening })
 
     // Wavy Guild
@@ -35,7 +33,7 @@ client.on('ready', async () => {
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     let mkt_channel = await client.channels.fetch('820051777650556990')
-    let mkt_logs = await client.channels.fetch('1038822879787229214')
+    let mkt_logs = await client.channels.fetch('1054648843851010068')
     marketUpdate(mkt_channel, mkt_logs, wavy)
 
     //Update casinos
@@ -53,6 +51,12 @@ client.on('ready', async () => {
 });
 
 let prefix = '$'
+
+client.on('guildMemberAdd', member => {
+    console.log('User ' + member.user.username + ' has joined the server!');
+    let role = member.guild.roles.cache.find(role => role.id == "812926342249185320")
+    member.roles.add(role);
+});
 
 client.on('messageCreate', message => {
     if (!message.content.startsWith(prefix)) return;
@@ -114,7 +118,7 @@ async function test() {
             }
         }
     }
-    if (changed == nicknames)
+    if (changed != nicknames)
         await database.updateRestrictedNicknames(nicknames)
 
     console.log("Inspecting Server Name")
@@ -324,9 +328,6 @@ async function editCommand(msg) {
 
     } else if (reactionName == 'wavyheart') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **custom badge**" })
-
-        
-
     } else if (reactionName == 'groovy') {
         embed2.addFields({ name: "\u200B", value: "You have chosen to edit a **restricted nickname**" })
     } else if (reactionName == 'aesthetic') {
@@ -339,43 +340,42 @@ async function editCommand(msg) {
     // Update database and appropriate server features
 }
 
-
-let ldbIDCurr = '966719668117209129'
-let ldbIDBoost = '966719660525502524'
-
 async function leaderboardUpdate(channel) {
     console.log("updating ldb");
 
     let ldbEmbed2 = await leaderboard.getEmbedBoost(client)
+    let boostLDB = await database.getLDBBoostMessage()
+
     let exists = true
     try {
-        await channel.messages.fetch(ldbIDBoost)
+        await channel.messages.fetch(boostLDB)
     } catch (error) {
         console.error(error)
         exists = false;
     } finally {
         if (!exists) {
             let msg = await channel.send({ embeds: [ldbEmbed2] })
-            ldbIDBoost = msg.id
+            database.updateLDBBoostMessage(msg.id)
         } else {
-            let msg = await channel.messages.fetch(ldbIDBoost)
+            let msg = await channel.messages.fetch(boostLDB)
             msg.edit(ldbEmbed2);
         }
     }
 
     let ldbEmbed = await leaderboard.getEmbedCurr(client);
+    let historyLDB = await database.getLDBHistoryMessage()
     exists = true;
     try {
-        await channel.messages.fetch(ldbIDCurr)
+        await channel.messages.fetch(historyLDB)
     } catch (error) {
         console.error(error)
         exists = false;
     } finally {
         if (!exists) {
             let msg = await channel.send({ embeds: [ldbEmbed] })
-            ldbIDCurr = msg.id
+            database.updateLDBHistoryMessage(msg.id)
         } else {
-            let msg = await channel.messages.fetch(ldbIDCurr)
+            let msg = await channel.messages.fetch(historyLDB)
             msg.edit(ldbEmbed);
         }
     }

@@ -37,7 +37,7 @@ async function awaitMarketReaction(message, channel, logs, guild, filter) {
     console.log("awaiting market reaction")
     let user;
 
-    await message.awaitReactions({ filter, max: 1 })
+    await message.awaitReactions({ filter, max: 1 }).catch(err => console.log(err))
     .then(async collected => {
         user = collected.first().users.cache.last()
         await message.reactions.cache.find(r => r.emoji.id == '814968693981184030').users.remove(user)
@@ -106,7 +106,7 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     confirmation.react('❌')
     
     const filter = (reaction, user) => (reaction.emoji.name == '✅' || reaction.emoji.name == '❌') && user.id != '813021543998554122'
-    let reaction = await confirmation.awaitReactions({filter, max: 1 })
+    let reaction = await confirmation.awaitReactions({ filter, max: 1, time: 30000 }).catch(err => console.log(err))
 
     let emoji = reaction.first().emoji.name
 
@@ -117,13 +117,13 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     } else {
         let remaining = wallet - product.price
 
-        if (await processProduct(user, channel, logs, guild, productID) == false)
+        if (await processProduct(user, channel, guild, productID) == false)
             return
 
         console.log(user.id + "      " + user.username + " purchased " + product.name +
         "     Before: " + wallet + " After: " + remaining)
 
-        //database.removeCum(user, product.price)
+        database.removeCum(user, product.price)
 
         await channel.send({ content: "Your order was successful.\n**" + product.name + "** has been purchased.\n"
                                 + "Your remaining **cumulative** balance is: " + remaining + " <:HentaiCoin:814968693981184030>" })
@@ -142,118 +142,94 @@ async function confirmProduct(channel, logs, message, guild, user, products) {
     return
 }
 
-async function processProduct(user, channel, logs, guild, productID) {
+async function processProduct(user, channel, guild, productID) {
     let members = guild.members
 
-    if (productID >= 1 && productID <= 3) {
-        //Custom Role Tier 1
-        //Custom Role Tier 2
-        //Custom Role Tier 3
-
-        await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
-    
-        let filter = (m) => m.author.id == user.id
-        let roleName = await awaitResponse(channel, filter, 30000, true);
-        if (roleName == false)
-            return false
-
-        await channel.send({ content: "Your role will be called " + roleName +
-                                      "\n\nNow pick your role's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
-                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
-
-        let roleColor = await awaitResponse(channel, filter, 90000, false)
-        if (roleColor == false)
-            return false
-        
-        // Check if roleColor is a valid hex code
-        if (/^#[0-9A-F]{6}$/i.test(roleColor) || /^[0-9A-F]{6}$/i.test(roleColor)) {
-            if (/^[0-9A-F]{6}$/i.test(roleColor))
-                roleColor = "#" + roleColor
-        } else {
-            await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
-            return false;
-        }
-
-        // Configure pos based on tier of product
-        let pos
-        if (productID == 1) {
-            //Wavy Role
-            let wavyRole = await guild.roles.fetch('687840476744908815')
-            pos = wavyRole.rawPosition - 1
-
-        } else if (productID == 2) {
-            //Groovy Role
-            let groovyRole = await guild.roles.fetch('812983666136842241')
-            pos = groovyRole.rawPosition - 1
-
-        } else {
-            // Aesthetic Role
-            let aesthethicRole = await guild.roles.fetch('812926342249185320')
-            pos = aesthethicRole.rawPosition - 1
-
-        }
-
-        let role = await guild.roles.create({
-            name: roleName,
-            color: roleColor,
-            hoist: true,
-            permissions: [],
-            position: pos,
-            mentionable: true,
-            
-        })
-
+    if (productID == 1) {
         let target = await members.fetch(user.id, { force: true })
-        target.roles.add(role)
 
-        console.log("Tier " + productID + " role has been created for " + user.username + " called " + roleName +
-        "\nBadge Color: " + roleColor)
+        if (await database.hasCustomRole(user.id)) {
+            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            return false
+        } else if (!target.roles.cache.has('687840476744908815')) {
+            await channel.send({ content: "You have to be of at least <@&687840476744908815> rank to purchase a **Tier 3 Custom Role**" })
+            return false
+        }
 
-        database.updateRoles(user.id, role, productID)
+        return await processRoleRequest(channel, guild, target, productID)
 
-        return true
+    } else if (productID == 2) {
+        let target = await members.fetch(user.id, { force: true })
+
+        if (await database.hasCustomRole(user.id)) {
+            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            return false
+
+        // If user has lower rank than purchased tier            
+        } else if (!target.roles.cache.has('812983666136842241')) {
+            await channel.send({ content: "You have to be of at least <@&812983666136842241> rank to purchase a **Tier 3 Custom Role**" })
+            return false
+
+        // If user has higher rank than the purchased tier
+        } else if (target.roles.cache.has('687840476744908815')) {
+            await channel.send({ content: "Seems like you are of rank <@&687840476744908815>\n" +
+                                          "You are eligible to purchase a Tier 3 Custom Role. Please try again with the appropriate product" })
+            return false
+        }
+
+        return await processRoleRequest(channel, guild, target, productID)
+
+    } else if (productID == 3) {
+        let target = await members.fetch(user.id, { force: true })
+
+        if (await database.hasCustomRole(user.id)) {
+            await channel.send({ content: "You seem to already have purchased a custom role\nUse the $edit command to edit or upgrade your custom role"})
+            return false
+
+        // If user has lower rank than purchased tier
+        } else if (!target.roles.cache.has('812926342249185320')) {
+            await channel.send({ content: "You have to be of at least <@&812926342249185320> rank to purchase a **Tier 3 Custom Role**" })
+            return false
+
+        // If user has higher rank than purchased tier
+        } else if (target.roles.cache.has('812983666136842241')) {
+            await channel.send({ content: "Seems like you are of **at least** rank <@&812983666136842241>\n" +
+                                          "You are eligible to purchase a Tier 2 Custom Role. Please try again with the appropriate product" })
+            return false
+        }
+
+        return await processRoleRequest(channel, guild, target, productID)
 
     } else if (productID == 4) {
-        //Badge/Title
+
         await channel.send({ content: "What do you want your custom badge to be called?\n*Badges are displayed on your profile like a role, but won't affect the way you're displayed in the server*" })
 
-        let filter = (m) => m.author.id == user.id;
-        let badgeName = await awaitResponse(channel, filter, 30000, true);
-        if (badgeName == false)
+        let badgeInput = await getRoleCreationInput(channel, user, "badge")
+        if (badgeInput === false)
             return false
-        
-        await channel.send({ content: "Your badge will be called: " + badgeName + 
-                                      "\n\nNow pick your badge's color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
-                                      "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
-
-        let badgeColor = await awaitResponse(channel, filter, 90000, false);
-        if (badgeColor == false)
-            return false;
-
-        // Check if badgeColor is a valid hex code
-        badgeColor = await validHexColor(channel, badgeColor)
-        if (!badgeColor)
-            return false
-
-        // STUB: Add support for Role Icons
 
         let badge = await guild.roles.create({
-            name: badgeName,
-            color: badgeColor,
+            name: badgeInput[0],
+            color: badgeInput[1],
             hoist: false,
             permissions: [],
             position: 0,
             mentionable: true,
-            
+            icon: badgeInput[2].url
         })
 
         let target = await members.fetch(user.id, { force: true })
         target.roles.add(badge)
 
-        console.log("Badge has been created for " + user.username + " called " + badgeName +
-                    "\nBadge Color: " + badgeColor)
+        await channel.send({ content: "**Creating Custom Badge...**\nKeep in mind you can edit your custom badge(s) using the $edit command" })
+
+        console.log("Badge has been created for " + user.username + " called " + badgeInput[0] +
+                    "\nBadge Color: " + badgeInput[1])
 
         database.updateBadges(user.id, badge, productID)
+
+        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+        await wait(5000);
 
         return true
 
@@ -335,30 +311,48 @@ async function processProduct(user, channel, logs, guild, productID) {
             return false
         }
 
-        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions are strictly **512x512** pixels and **8MB** max size" +
+        await channel.send({ content: "Upload the new server icon as an image.\nAccepted dimensions **must** be of **1:1** aspect ratio and **8MB** max size" +
                                       "\n\nYou can use whatever resize/compress tool, but here's some recs\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com/>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
 
         let filter = (m) => m.author.id == user.id
-        let collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] })
+        let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
         .catch(err => {
             console.log(err)
             return null;
         })
         if (collected == null)
             return false
-
+        
         let serverIcon = collected.first().attachments.values().next().value
 
-        // Conditions for dimension and file size of server icon
-        if (serverIcon.height != 512 && serverIcon.width != 512) {
-            await channel.send({ content: "The server icon dimensions **must** be **512x512** pixels\n" + 
-                                          "The image you uploaded has dimensions of " + serverIcon.width + "x" + serverIcon.height +
-                                          "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+        // Input filtering for gif png jpg
+        if (serverIcon == undefined || 
+            !serverIcon.hasOwnProperty("contentType") ||
+            (serverIcon.contentType != 'image/png' &&
+            serverIcon.contentType != 'image/jpeg' &&
+            serverIcon.contentType != 'image/gif')) {
+            
+            await channel.send({ content: "Please enter a valid image type: PNG, JPG, GIF" })
             return false
+        }
+
+        let toDivide = await gcd(serverIcon.height, serverIcon.width)
+        let aspectRatio = (serverIcon.width / toDivide).toString() + ":" + (serverIcon.height / toDivide).toString()
+
+        // Conditions for dimension and file size of server icon
+        if (aspectRatio != "1:1") {
+            await channel.send({ content: "The server icon dimensions **must** be of **1:1** aspect ratio\n" + 
+                                          "The image you uploaded has an aspect ratio of **" + aspectRatio + "**" +
+                                          "\n\nResize your **image** with Image Resizer: <https://imageresizer.com/>" +
+                                          "\nResize a **gif** with GIF Resizer: <https://ezgif.com/resize>" +
+                                          "\nCrop a **gif** with GIF Cropper: <https://ezgif.com/crop>" })
+            return false
+
         } else if (serverIcon.size >= 8000000) {
             await channel.send({ content: "The server icon size **must** be **less than 8MB**" +
-                                          "The image you uploaded is of size " + Math.trunc(serverIcon.size/1000000) +
-                                          "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+                                          "The image you uploaded is of size " + Math.trunc(serverIcon.size/1000000) + "MB" +
+                                          "\n\nCompress your **image** with Image Compressor: <https://imagecompressor.com/>" +
+                                          "\nCompress your **gif** with GIF Compressor: <https://ezgif.com/optimize>"})
             return false
         }
         
@@ -532,9 +526,141 @@ async function validHexColor(channel, color) {
             color = "#" + color
         return color
     } else {
-        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6-digits: #CEA2D7 **or** CEA2D7" })
+        await channel.send({ content: "Please enter a valid hex code.\nAllowed formats are 6 digits of 0-9 or A-F (i.e #CEA2D7 **or** CEA2D7)" +
+                                      "\nUse this online color picker to get your desired code:* <https://htmlcolorcodes.com/color-picker/>" })
         return false
     }
+}
+
+async function getRoleCreationInput(channel, user, option) {
+
+    let filter = (m) => m.author.id == user.id;
+    let name = await awaitResponse(channel, filter, 30000, true);
+    if (name == false)
+        return false
+    
+    await channel.send({ content: "Your " + option + " will be called: " + name + 
+                                  "\n\nNow pick your " + option + "'s color!\nYou must insert your color's hex code (i.e. #CEA2D7 **or** CEA2D7)" +
+                                  "\n\n*Use this online color picker to get your desired hex code:* <https://htmlcolorcodes.com/color-picker/>"})
+
+    let color = await awaitResponse(channel, filter, 90000, false);
+    if (color == false)
+        return false;
+
+    // Check if color is a valid hex code
+    color = await validHexColor(channel, color)
+    if (!color)
+        return false
+
+    await channel.send({ content: "Upload any custom icon for your " + option + ".\nAccepted dimensions **must** be of **1:1** aspect ratio and **256KB** max size\n*Since it's an icon, I suggest you upload a transparent PNG. Your call though*" +
+                                  "\n\nYou can use whatever resize/compress/transparent tool, but here's some quick links\nPNG Transparent(izer)?: <https://onlinepngtools.com/create-transparent-png>\nImage Resizer: <https://imageresizer.com/>\nImage Compressor: <https://imagecompressor.com>\nImage Cropper: <https://www.iloveimg.com/crop-image>" })
+
+    filter = (m) => user.id == m.author.id
+    let collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] })
+    .catch(err => {
+        console.log(err)
+        return null;
+    })
+    if (collected == null) {
+        await channel.send({ content: "Request timed out. Closing Market session" })
+        return false
+    }
+
+    let icon = collected.first().attachments.values().next().value
+
+    if (icon == undefined ||
+        !icon.hasOwnProperty("contentType") ||
+        (icon.contentType != 'image/png' &&
+        icon.contentType != 'image/jpeg')) {
+        
+        await channel.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for " + option + " icons*" })
+        return false
+    }
+
+    let toDivide = await gcd(icon.height, icon.width)
+    let aspectRatio = (icon.width / toDivide).toString() + ":" + (icon.height / toDivide).toString()
+
+    // Convert byte size to presentable format
+    let formatSize = ""
+    if (icon.size >= 1000000)
+        formatSize = (Math.trunc(icon.size/1000000)).toString() + "MB"
+    else
+        formatSize = (Math.trunc(icon.size/1000)).toString() + "KB"
+
+    // Conditions for dimension and file size of icon
+    if (aspectRatio != "1:1") {
+        await channel.send({ content: "Icon dimensions **must** be of **1:1** aspect ratio\n" + 
+                                      "The image you uploaded has an aspect ratio of **" + aspectRatio + "**" +
+                                      "\n\nResize your image with Image Resizer: <https://imageresizer.com/>"})
+        return false
+    } else if (icon.size >= 256000) {
+        await channel.send({ content: "Icon size **must** be **less than **256KB**" + 
+                                      "The image you uploaded is of size " + formatSize +
+                                      "\n\nResize your image with Image Compressor: <https://imagecompressor.com/>"})
+        return false
+    }
+
+    return [name, color, icon]
+}
+
+async function processRoleRequest(channel, guild, target, productID) {
+    let user = target.user
+
+    // Configure pos based on tier of product
+    let pos
+    let tier
+    if (productID == 1) {
+        //Wavy Role
+        let wavyRole = await guild.roles.fetch('687840476744908815')
+        pos = wavyRole.position + 1
+        tier = 3
+    } else if (productID == 2) {
+        //Groovy Role
+        let groovyRole = await guild.roles.fetch('812983666136842241')
+        pos = groovyRole.position + 1
+        tier = 2
+    } else {
+        // Aesthetic Role
+        let aesthethicRole = await guild.roles.fetch('812926342249185320')
+        pos = aesthethicRole.position + 1
+        tier = 1
+    }
+
+    await channel.send({ content: "What do you want your custom role to be called?\nYou can always change this later with the *$edit* command" })
+
+    let roleInput = await getRoleCreationInput(channel, user, "Tier " + (tier).toString() + " Custom Role")
+    if (roleInput === false)
+        return false
+
+    let role = await guild.roles.create({
+        name: roleInput[0],
+        color: roleInput[1],
+        hoist: true,
+        permissions: [],
+        position: pos,
+        mentionable: true,
+        icon: roleInput[2].url
+    })
+
+    target.roles.add(role)
+
+    await channel.send({ content: "**Creating Custom Tier " + tier + " Role...**\nKeep in mind you can edit or upgrade your custom role tier, if eligible, using the $edit command" })
+
+    console.log("Tier " + tier + " role has been created for " + user.username + " called " + roleInput[0] +
+    "\nBadge Color: " + roleInput[1])
+
+    database.updateRoles(user.id, role, tier)
+
+    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+    await wait(5000);
+
+    return true
+}
+
+function gcd (a,b) {
+    if (b == 0)
+        return a
+    return gcd (b, a % b)
 }
 
 module.exports = {
@@ -543,5 +669,6 @@ module.exports = {
     sendRestrictMessage : sendRestrictMessage,
     sendUnrestrictMessage : sendUnrestrictMessage,
     awaitResponse : awaitResponse,
-    validHexColor : validHexColor
+    validHexColor : validHexColor,
+    getRoleCreationInput : getRoleCreationInput
 }

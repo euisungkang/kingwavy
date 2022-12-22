@@ -1,4 +1,5 @@
 const admin = require("firebase-admin");
+const fs = require('fs')
 
 admin.initializeApp({
     credential: admin.credential.cert(
@@ -25,9 +26,53 @@ async function updateMarketMessage(msg) {
     await meta.update({
         message: msg
     }).then(() => {
-        console.log("Document written successfully: Market Message");
+        console.log("[DATABASE] Document written successfully: Market Message");
     }).catch(err => {
         console.log("Error: " + err);
+    })
+}
+
+async function getLDBHistoryMessage() {
+    let meta = await db.collection('leaderboards').doc('meta')
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().history
+    
+    return false
+}
+
+async function updateLDBHistoryMessage(msg) {
+    let meta = await db.collection('leaderboards').doc('meta')
+
+    await meta.update({
+        history: msg
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: LDB History Message")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function getLDBBoostMessage() {
+    let meta = await db.collection('leaderboards').doc('meta')
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().boost
+
+    return false
+}
+
+async function updateLDBBoostMessage(msg) {
+    let meta = await db.collection('leaderboards').doc('meta')
+
+    await meta.update({
+        boost: msg
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: LDB Boost Message")
+    }).catch(err => {
+        console.log("Error: " + err)
     })
 }
 
@@ -35,23 +80,22 @@ async function getTopWallets() {
     const wallets = await db.collection('wallets').get();
     let walletmap = new Map();
 
-    wallets.docs.map(doc => {
+    await wallets.docs.map(doc => {
       //King wavy
-      if(doc.data().userID != '813021543998554122')
-        walletmap.set(doc.data().userID, doc.data().cum);
+      //console.log(typeof doc.data().history)
+      if(doc.data().userID != '813021543998554122') 
+        walletmap.set(doc.data().userID, doc.data().history);
     })
 
-    const sorted = await new Map([...walletmap.entries()].sort((a, b) => b[1] - a[1]));
+    const sorted = new Map([...walletmap.entries()].sort((a, b) => b[1] - a[1]));
 
-    let index = 0;
-    for (let k of sorted.keys()) {
-        if (index > 8) {
-          sorted.delete(k);
-        }
-        index++;
-    }
-
-    return sorted;
+    let finalMap = new Map()
+    let sliced = [...sorted.keys()].slice(0, 9)
+    await sliced.forEach(k => {
+        finalMap.set(k, sorted.get(k))
+    })
+                 
+    return finalMap;
 }
 
 async function getProducts() {
@@ -95,19 +139,22 @@ async function addCurrency(user, amount) {
 
   let userDB = db.collection('wallets').doc(id);
   let aggregate_amount;
+  let history = 0
 
   const doc = await userDB.get();
   if (doc.exists) {
       aggregate_amount = doc.data().currency + amount;
+      history = doc.data().history + amount
       console.log(doc.data());
   }
 
   await userDB.update({
       userID: id,
       name: name,
-      currency: aggregate_amount
+      currency: aggregate_amount,
+      history: history
   }).then(() => {
-      console.log("Document written successfully");
+      console.log("[DATABASE] Document written successfully");
   }).catch(err => {
       console.log("Error: " + err);
   })
@@ -131,7 +178,7 @@ async function removeCurrency(user, amount) {
       name: name,
       currency: aggregate_amount
   }).then(() => {
-      console.log("Document written successfully");
+      console.log("[DATABASE] Document written successfully");
   }).catch(err => {
       console.log("Error: " + err);
   })
@@ -154,7 +201,7 @@ async function removeCum(user, amount) {
         name: name,
         cum: aggregate_amount
     }).then(() => {
-        console.log("Document written successfully")
+        console.log("[DATABASE] Document written successfully")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -174,7 +221,7 @@ async function updateRestrictedNicknames(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Restricted Nicknames")
+        console.log("[DATABASE] Document written successfully: Restricted Nicknames")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -193,7 +240,7 @@ async function updateRestrictedServerName(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Server Name")
+        console.log("[DATABASE] Document written successfully: Server Name")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -212,7 +259,7 @@ async function updateRestrictedServerIcon(res) {
     await userDB.update({
         restricted: res
     }).then(() => {
-        console.log("Document written successfully: Server Icon")
+        console.log("[DATABASE] Document written successfully: Server Icon")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -247,7 +294,7 @@ async function updateBadges(id, badge) {
     await userDB.update({
         badges: badges
     }).then(() => {
-        console.log("Document written successfully: Custom Badge")
+        console.log("[DATABASE] Document written successfully: Custom Badge")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -264,7 +311,24 @@ async function editBadges(id, bs) {
     await userDB.update({
         badges: badges
     }).then(() => {
-        console.log("Document written successfully: Custom Badges Updated (Whole)")
+        console.log("[DATABASE] Document written successfully: Custom Badges Updated (Whole)")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
+async function editRole(id, role) {
+    let userDB = db.collection('market').doc('roles')
+    const doc = await userDB.get()
+
+    let roles = await doc.data().roles
+
+    roles[id] = role
+
+    await userDB.update({
+        roles: roles
+    }).then(() => {
+        console.log("[DATABASE] Document written succesfully: Custom Role Updated (Whole)")
     }).catch(err => {
         console.log("Error: " + err)
     })
@@ -284,17 +348,23 @@ async function updateRoles(id, role, tier) {
         tier: tier
     }
 
-    console.log(newRole)
-
-    roles[id] = [newRole]
+    roles[id] = newRole
 
     await userDB.update({
         roles: roles
     }).then(() => {
-        console.log("Document written successfully: Custom Role")
+        console.log("[DATABASE] Document written successfully: Custom Role")
     }).catch(err => {
         console.log("Error: " + err)
     })
+}
+
+async function hasCustomRole(id) {
+    let userDB = db.collection('market').doc('roles')
+    const doc = await userDB.get()
+    let roles = await doc.data().roles
+    
+    return roles.hasOwnProperty(id)
 }
 
 async function getAllSubscriptions(id) {
@@ -309,11 +379,8 @@ async function getAllSubscriptions(id) {
 
     let doc = await roles.get()
     let purchasedRoles = await doc.data().roles
-    if (purchasedRoles.hasOwnProperty(id)) {
-        purchasedRoles[id].forEach(role => {
-            toReturn.set(role.tier, role)
-        })
-    }
+    if (purchasedRoles.hasOwnProperty(id))
+        toReturn.set(purchasedRoles[id].tier, purchasedRoles[id])
 
     doc = await badges.get()
     let purchasedBadges = await doc.data().badges
@@ -338,9 +405,21 @@ async function getAllSubscriptions(id) {
     return toReturn
 }
 
+async function getRolePositions() {
+    let userDB = db.collection('market').doc('meta')
+    const doc = await userDB.get()
+    let roles = await doc.data().rolePositions
+
+    return roles
+}
+
 module.exports = {
     getMarketMessage : getMarketMessage,
     updateMarketMessage : updateMarketMessage,
+    getLDBHistoryMessage : getLDBHistoryMessage,
+    updateLDBHistoryMessage : updateLDBHistoryMessage,
+    getLDBBoostMessage : getLDBBoostMessage,
+    updateLDBBoostMessage : updateLDBBoostMessage,
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,
@@ -352,6 +431,8 @@ module.exports = {
     getBadges : getBadges,
     editBadges : editBadges,
     updateRoles : updateRoles,
+    editRole: editRole,
+    hasCustomRole : hasCustomRole,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,
     getRestrictedServerName : getRestrictedServerName,
@@ -359,4 +440,5 @@ module.exports = {
     getRestrictedServerIcon : getRestrictedServerIcon,
     updateRestrictedServerIcon : updateRestrictedServerIcon,
     getAllSubscriptions : getAllSubscriptions,
+    getRolePositions : getRolePositions
 }
