@@ -4,7 +4,7 @@ const market = require('../market')
 
 async function editCommand(client, msg) {
     const wavy = await client.guilds.resolve('687839393444397105')
-    let mkt_logs = await client.channels.fetch('1038822879787229214')
+    let mkt_logs = await client.channels.fetch('1054648843851010068')
 
     let replyChannel = await client.channels.fetch(msg.channel.id)
     replyChannel.send({ content: "Check your DMs <@" + msg.author.id + ">\n" + 
