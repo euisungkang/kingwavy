@@ -326,10 +326,11 @@ async function processProduct(user, channel, guild, productID) {
         let serverIcon = collected.first().attachments.values().next().value
 
         // Input filtering for gif png jpg
-        if ((!("contentType" in serverIcon)) ||
-            serverIcon.contentType != 'image/png' &&
+        if (serverIcon == undefined || 
+            !serverIcon.hasOwnProperty("contentType") ||
+            (serverIcon.contentType != 'image/png' &&
             serverIcon.contentType != 'image/jpeg' &&
-            serverIcon.contentType != 'image/gif') {
+            serverIcon.contentType != 'image/gif')) {
             
             await channel.send({ content: "Please enter a valid image type: PNG, JPG, GIF" })
             return false
@@ -567,11 +568,12 @@ async function getRoleCreationInput(channel, user, option) {
 
     let icon = collected.first().attachments.values().next().value
 
-    if ((!("contentType" in icon)) ||
-        icon.contentType != 'image/png' &&
-        icon.contentType != 'image/jpeg') {
+    if (icon == undefined ||
+        !icon.hasOwnProperty("contentType") ||
+        (icon.contentType != 'image/png' &&
+        icon.contentType != 'image/jpeg')) {
         
-        await channel.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for" + option + " icons*" })
+        await channel.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for " + option + " icons*" })
         return false
     }
 

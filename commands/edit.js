@@ -432,10 +432,11 @@ async function editCommand(client, msg) {
         newIcon = newIcon.first().attachments.values().next().value
 
         // Input filtering for gif png jpg
-        if ((!("contentType" in newIcon)) ||
-            newIcon.contentType != 'image/png' &&
+        if (newIcon == undefined ||
+            !newIcon.hasOwnProperty("contentType") ||
+            (newIcon.contentType != 'image/png' &&
             newIcon.contentType != 'image/jpeg' &&
-            newIcon.contentType != 'image/gif') {
+            newIcon.contentType != 'image/gif')) {
             
             await channel.send({ content: "Please enter a valid image type: PNG, JPG, GIF" })
             return false
@@ -537,9 +538,10 @@ async function processIcon(user, channel, OBJ) {
     let icon = collected.first().attachments.values().next().value
 
     // Input filtering for gif png jpg
-    if ((!("contentType" in icon)) ||
-        icon.contentType != 'image/png' &&
-        icon.contentType != 'image/jpeg') {
+    if (icon == undefined ||
+        !icon.hasOwnProperty("contentType") ||
+        (icon.contentType != 'image/png' &&
+        icon.contentType != 'image/jpeg')) {
 
         await user.send({ content: "Please enter a valid image type: PNG, JPG. *GIFs are not accepted for icons*" })
         return false
