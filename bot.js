@@ -6,6 +6,7 @@ const cron = require('node-cron');
 const database = require('./firebaseSDK');
 const vote = require('./voting')
 const edit = require('./commands/edit')
+const guide = require('./commands/guide')
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -58,14 +59,15 @@ client.on('guildMemberAdd', member => {
     member.roles.add(role);
 });
 
-client.on('messageCreate', message => {
+client.on('messageCreate', async message => {
     if (!message.content.startsWith(prefix)) return;
 
     const args = message.content.trim().split(/ +/g);
     const cmd = args[0].slice(prefix.length).toLowerCase();
   
     if (cmd == 'guide') {
-        guideCommand(message)
+        let replyChannel = await client.channels.fetch(message.channel.id)
+        guide.guideCommand(replyChannel)
     } else if (cmd == 'edit') {
         edit.editCommand(client, message)
     } else if (cmd == 'test') {
@@ -160,29 +162,6 @@ cron.schedule('00 1 1 * *', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel)
 })
-
-async function guideCommand(msg) {
-    let replyChannel = await client.channels.fetch(msg.channel.id)
-
-    let embed = new EmbedBuilder()
-    .setColor('#ff6ad5')
-    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Guide")
-    .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
-    .addFields(
-        { name: "Currency System", value: "<#824106380222005288>: Learn About the 𝓦 𝓪 𝓿 𝔂 currency system\n\n"},
-        //{ name: '\u200B', value: '\u200B' },
-        { name: "Announcements", value: "<#813132145966186567>: Stay updated on new features and raffles"},
-        { name: "Raffles/Giveaways", value: "<#962308831944265768>: Spend coins for a chance at irl rewards"},
-        { name: "Market", value: "<#820051777650556990>: Spend coins to buy server perks and features"},
-        { name: "Casino", value: "<#825143682139029555>: Learn casino games to earn coins against others"}
-    )
-    .setFooter({
-        text: 'Type ./$help <CommandName>./ for bot commands',
-        iconURL: 'https://cdn.discordapp.com/app-icons/812904867462643713/c3713856eae103c4cad96111e26bce21.png?size=512'
-    });
-
-    return await replyChannel.send({ embeds: [embed] })
-}
 
 async function editCommand(msg) {
     const wavy = await client.guilds.resolve('687839393444397105')
