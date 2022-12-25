@@ -46,7 +46,7 @@ client.on('ready', async () => {
     // Update leaderboards
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
     let ldb_channel = await client.channels.fetch('824376092257157120')
-    leaderboardUpdate(ldb_channel);
+    leaderboard.updateLeaderboards(wavy, ldb_channel)
 
     vote.votingSystemPP(client)
 });
@@ -71,7 +71,7 @@ client.on('messageCreate', async message => {
     } else if (cmd == 'edit') {
         edit.editCommand(client, message)
     } else if (cmd == 'test') {
-        test()
+        checkExpirations()
     }
 });
 
@@ -88,7 +88,7 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     }
 });
 
-async function test() {
+async function checkExpirations() {
     console.log("Checking Restrictions")
 
     let nicknames = await database.getRestrictedNicknames();
@@ -149,7 +149,7 @@ async function test() {
 
 // Start of every day, see if anyone's restrictions are released
 cron.schedule('1 0 * * *', async () => {
-    test()
+    checkExpirations()
 })
 
 // cron.schedule('00 5 * * *', () => {
@@ -317,47 +317,6 @@ async function editCommand(msg) {
 
     // Resolve Request
     // Update database and appropriate server features
-}
-
-async function leaderboardUpdate(channel) {
-    console.log("updating ldb");
-
-    let ldbEmbed2 = await leaderboard.getEmbedBoost(client)
-    let boostLDB = await database.getLDBBoostMessage()
-
-    let exists = true
-    try {
-        await channel.messages.fetch(boostLDB)
-    } catch (error) {
-        console.error(error)
-        exists = false;
-    } finally {
-        if (!exists) {
-            let msg = await channel.send({ embeds: [ldbEmbed2] })
-            database.updateLDBBoostMessage(msg.id)
-        } else {
-            let msg = await channel.messages.fetch(boostLDB)
-            msg.edit(ldbEmbed2);
-        }
-    }
-
-    let ldbEmbed = await leaderboard.getEmbedCurr(client);
-    let historyLDB = await database.getLDBHistoryMessage()
-    exists = true;
-    try {
-        await channel.messages.fetch(historyLDB)
-    } catch (error) {
-        console.error(error)
-        exists = false;
-    } finally {
-        if (!exists) {
-            let msg = await channel.send({ embeds: [ldbEmbed] })
-            database.updateLDBHistoryMessage(msg.id)
-        } else {
-            let msg = await channel.messages.fetch(historyLDB)
-            msg.edit(ldbEmbed);
-        }
-    }
 }
 
 async function marketUpdate(channel, logs, guild) {

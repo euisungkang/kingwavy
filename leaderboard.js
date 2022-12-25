@@ -1,10 +1,57 @@
 const database = require('./firebaseSDK')
 const { EmbedBuilder } = require('discord.js');
 
-async function getEmbedCurr(c) {
+async function updateLeaderboards(guild, channel) {
+    console.log('updating ldb')
+
+    let boostEmbed = await getBoostEmbed(guild)
+    let boostMSG = await database.getLDBBoostMessage()
+
+    let exists = true
+    try {
+        await channel.messages.fetch(boostMSG)
+    } catch(err) {
+        console.log("No Boost Leaderboard msg detected: creating new message")
+        exists = false
+    } finally {
+        if (!exists) {
+            let msg = await channel.send({ embeds: [boostEmbed] })
+            database.updateLDBBoostMessage(msg.id)
+        } else {
+            let msg = await channel.messages.fetch(boostMSG)
+            msg.edit(boostEmbed)
+        }
+    }
+
+    let currencyEmbed = await getEmbedCurr(guild.members)
+    let currencyMSG = await database.getLDBHistoryMessage()
+
+    exists = true
+    try {
+        await channel.messages.fetch(currencyMSG)
+    } catch(err) {
+        console.log("No Currency Leaderboard msg detected: creating new message")
+    } finally {
+        if (!exists) {
+            let msg = await channel.send({ embeds: [currencyEmbed] })
+            database.updateLDBHistoryMessage(msg.id)
+        } else {
+            let msg = await channel.messages.fetch(currencyMSG)
+            msg.edit(currencyEmbed)
+        }
+    }
+}
+
+async function getEmbedCurr(members) {
     let top5 = await database.getTopWallets();
     let top5Keys = Array.from(top5.keys());
     let top5Values = Array.from(top5.values());
+    
+    let topWallet = [...top5][0][0]
+    let royalty = await database.getRoyalty()
+    if (royalty.currency != topWallet) {
+        database.editRoyalty("currency", topWallet)
+    }
 
     const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
@@ -14,16 +61,16 @@ async function getEmbedCurr(c) {
 	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
 	.addFields(
         { name: '\u200B', value: '\u200B' },
-		{ name: "🥇 : " + await getName(c, top5Keys[0]), value: top5Values[0] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: "🥇 : " + await getName(members, top5Keys[0]), value: top5Values[0] + "   <:HentaiCoin:814968693981184030>" },
         { name: '\u200B', value: '\u200B' },
-		{ name: '🥈 : ' + await getName(c, top5Keys[1]), value: top5Values[1] + "   <:HentaiCoin:814968693981184030>" },
-		{ name: '🥉 : ' + await getName(c, top5Keys[2]), value: top5Values[2] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: '🥈 : ' + await getName(members, top5Keys[1]), value: top5Values[1] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: '🥉 : ' + await getName(members, top5Keys[2]), value: top5Values[2] + "   <:HentaiCoin:814968693981184030>" },
         { name: '\u200B', value: '\u200B' },
     )
 
     for (var i = 3; i < top5Keys.length; i++) {
         ldbEmbed.addFields(
-            { name: (i + 1) + ": " + await getName(c, top5Keys[i]), value: top5Values[i] + "   <:HentaiCoin:814968693981184030>", inline: true }
+            { name: (i + 1) + ": " + await getName(members, top5Keys[i]), value: top5Values[i] + "   <:HentaiCoin:814968693981184030>", inline: true }
         )
     }
 
@@ -36,22 +83,33 @@ async function getEmbedCurr(c) {
     return ldbEmbed;
 }
 
-async function getEmbedBoost(c) {
+async function getBoostEmbed(guild) {
     // Boost role: 812879135487426593
 
-    let wavy = await c.guilds.cache.get('687839393444397105')
-    let boosters = await wavy.members.fetch().then(m => CSCmembers = wavy.roles.cache.get('812879135487426593').members)
-
-    //console.log(await boosters.get('237018129664966656'))
+    let boosters = await guild.members.fetch().then(m => CSCmembers = guild.roles.cache.get('812879135487426593').members)
     let topBoosters = new Map()
 
     boosters.forEach(user => {
-        topBoosters.set(user.user.username, user.premiumSince)
+        topBoosters.set(user.user.id, user.premiumSince)
     })
 
     topBoosters = new Map([...topBoosters.entries()].sort((a, b) => a[1].getTime() - b[1].getTime()))
     let names = Array.from(topBoosters.keys())
     let dates = Array.from(topBoosters.values())
+
+    let royalty = await database.getRoyalty()
+    let topBooster
+    if (royalty.boost.fixed) {
+        topBooster = [...topBoosters][0][0]
+        if (royalty.boost != topBooster)
+            database.editRoyalty("boost", topBooster)
+    } else if () {
+        //IF NOT FIXED AND TOP BOOSTER IS IN ROYALTY
+    }
+
+    //STUB CONTINUE ROYALTY DEVELOPMENT
+
+
 
     const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
@@ -61,9 +119,9 @@ async function getEmbedBoost(c) {
 	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
 	.addFields(
         { name: '\u200B', value: '\u200B' },
-		{ name: "🥇 : " + names[0], value: "*since " + dates[0].toLocaleDateString() + "*" },
-		{ name: '🥈 : ' + names[1], value: "*since " + dates[1].toLocaleDateString() + "*" },
-		{ name: '🥉 : ' + names[2], value: "*since " + dates[2].toLocaleDateString() + "*" },
+		{ name: "🥇 : " + await getName(guild.members, names[0]), value: "*since " + dates[0].toLocaleDateString() + "*" },
+		{ name: '🥈 : ' + await getName(guild.members, names[1]), value: "*since " + dates[1].toLocaleDateString() + "*" },
+		{ name: '🥉 : ' + await getName(guild.members, names[2]), value: "*since " + dates[2].toLocaleDateString() + "*" },
         { name: '\u200B', value: '\u200B' },
     )
 	ldbEmbed
@@ -74,12 +132,13 @@ async function getEmbedBoost(c) {
     return ldbEmbed;
 }
 
-async function getName(c, id) {
-    let user = await c.users.fetch(id)
-    return user.username;
+async function getName(members, id) {
+    let member = await members.fetch(id, { force: true })
+    return member.user.username;
 }
 
 module.exports = {
+    updateLeaderboards : updateLeaderboards,
     getEmbedCurr : getEmbedCurr,
-    getEmbedBoost : getEmbedBoost
+    getBoostEmbed : getBoostEmbed
 }

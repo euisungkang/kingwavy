@@ -367,6 +367,29 @@ async function hasCustomRole(id) {
     return roles.hasOwnProperty(id)
 }
 
+async function getRoyalty() {
+    let userDB = db.collection('meta').doc('royalty')
+    const doc = await userDB.get()
+
+    return await doc.data().current
+}
+
+async function editRoyalty(title, id) {
+    let userDB = db.collection('meta').doc('royalty')
+    const doc = await userDB.get()
+    let royalty = await doc.data().current
+
+    royalty[title] = id
+
+    await userDB.update({
+        current: royalty
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: Royalty Updated")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function getAllSubscriptions(id) {
     let userDB = db.collection('market')
     const roles = userDB.doc('roles')
@@ -434,6 +457,8 @@ module.exports = {
     updateRoles : updateRoles,
     editRole: editRole,
     hasCustomRole : hasCustomRole,
+    getRoyalty : getRoyalty,
+    editRoyalty : editRoyalty,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,
     getRestrictedServerName : getRestrictedServerName,
