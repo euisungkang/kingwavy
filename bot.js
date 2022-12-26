@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, EmbedBuilder, ActivityType } = require('disco
 const market = require('./market')
 const casino = require('./casino')
 const leaderboard = require('./leaderboard')
+const royalty = require('./royalty')
 const cron = require('node-cron');
 const database = require('./firebaseSDK');
 const vote = require('./voting')
@@ -47,6 +48,13 @@ client.on('ready', async () => {
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboard.updateLeaderboards(wavy, ldb_channel)
+
+    currRoyalty = []
+    await wavy.roles.cache.get('813024016776167485').members.map(m => {
+        if (m.user.id != '813021543998554122' && m.user.id != '812904867462643713')
+            currRoyalty.push(m.user.id)
+    })
+    royalty.updateRoyalty(client.members, currRoyalty)
 
     vote.votingSystemPP(client)
 });

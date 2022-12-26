@@ -374,12 +374,20 @@ async function getRoyalty() {
     return await doc.data().current
 }
 
-async function editRoyalty(title, id) {
+async function editRoyalty(title, fixed, id) {
     let userDB = db.collection('meta').doc('royalty')
     const doc = await userDB.get()
     let royalty = await doc.data().current
 
-    royalty[title] = id
+    //console.log("ROYALTY ID: " + royalty[title].id + " == " + id + "\nROYALTY FIXED: " + royalty[title].fixed + " == " + fixed)
+
+    if (royalty.hasOwnProperty(title) && royalty[title].id == id && royalty[title].fixed == fixed)
+        return
+
+    royalty[title] = {
+        id: id,
+        fixed: fixed
+    }
 
     await userDB.update({
         current: royalty

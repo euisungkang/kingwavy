@@ -42,16 +42,53 @@ async function updateLeaderboards(guild, channel) {
     }
 }
 
+async function getBoostEmbed(guild) {
+    // Boost role: 812879135487426593
+
+    let boosters = await guild.members.fetch().then(m => CSCmembers = guild.roles.cache.get('812879135487426593').members)
+    let topBoosters = new Map()
+
+    boosters.forEach(user => {
+        topBoosters.set(user.user.id, user.premiumSince)
+    })
+
+    topBoosters = new Map([...topBoosters.entries()].sort((a, b) => a[1].getTime() - b[1].getTime()))
+    let names = Array.from(topBoosters.keys())
+    let dates = Array.from(topBoosters.values())
+
+    let royalty = await database.getRoyalty()
+
+    await filterDuplicates("boost", royalty, topBoosters)
+
+    const ldbEmbed = new EmbedBuilder()
+	.setColor('#ff6ad5')
+	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Boost Leaderboards")
+//	.setAuthor('𝒦𝒾𝓃𝑔 𝓌𝒶𝓋𝓎', 'https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
+	.setDescription('These are the top three longest <@&812879135487426593> in the server\nThank you for your support <:wavyheart:893239268309344266>')
+	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
+	.addFields(
+        { name: '\u200B', value: '\u200B' },
+		{ name: "🥇 : " + await getName(guild.members, names[0]), value: "*since " + dates[0].toLocaleDateString() + "*" },
+		{ name: '🥈 : ' + await getName(guild.members, names[1]), value: "*since " + dates[1].toLocaleDateString() + "*" },
+		{ name: '🥉 : ' + await getName(guild.members, names[2]), value: "*since " + dates[2].toLocaleDateString() + "*" },
+        { name: '\u200B', value: '\u200B' },
+    )
+	ldbEmbed
+	.setFooter({
+        text: 'Updated hourly'
+    });
+
+    return ldbEmbed;
+}
+
 async function getEmbedCurr(members) {
     let top5 = await database.getTopWallets();
     let top5Keys = Array.from(top5.keys());
     let top5Values = Array.from(top5.values());
     
-    let topWallet = [...top5][0][0]
     let royalty = await database.getRoyalty()
-    if (royalty.currency != topWallet) {
-        database.editRoyalty("currency", topWallet)
-    }
+
+    await filterDuplicates("currency", royalty, top5)
 
     const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
@@ -83,53 +120,26 @@ async function getEmbedCurr(members) {
     return ldbEmbed;
 }
 
-async function getBoostEmbed(guild) {
-    // Boost role: 812879135487426593
+async function filterDuplicates(type, royalty, ts) {
+    let top = [...ts][0][0]
 
-    let boosters = await guild.members.fetch().then(m => CSCmembers = guild.roles.cache.get('812879135487426593').members)
-    let topBoosters = new Map()
+    // If user is fixed, then user always gets boost as royalty
+    if (royalty[type].fixed === true)
+    database.editRoyalty(type, true, top)
 
-    boosters.forEach(user => {
-        topBoosters.set(user.user.id, user.premiumSince)
-    })
+    // If not fixed, check for duplicates
+    else {
+        let duplicate = false
 
-    topBoosters = new Map([...topBoosters.entries()].sort((a, b) => a[1].getTime() - b[1].getTime()))
-    let names = Array.from(topBoosters.keys())
-    let dates = Array.from(topBoosters.values())
+        for (const [key, value] of Object.entries(royalty))
+            if (key != type && top == value.id)
+                duplicate = true
 
-    let royalty = await database.getRoyalty()
-    let topBooster
-    if (royalty.boost.fixed) {
-        topBooster = [...topBoosters][0][0]
-        if (royalty.boost != topBooster)
-            database.editRoyalty("boost", topBooster)
-    } else if () {
-        //IF NOT FIXED AND TOP BOOSTER IS IN ROYALTY
+        if (duplicate) 
+            database.editRoyalty(type, false, [...ts][1][0])
+        else
+            database.editRoyalty(type, false, top)
     }
-
-    //STUB CONTINUE ROYALTY DEVELOPMENT
-
-
-
-    const ldbEmbed = new EmbedBuilder()
-	.setColor('#ff6ad5')
-	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Boost Leaderboards")
-//	.setAuthor('𝒦𝒾𝓃𝑔 𝓌𝒶𝓋𝓎', 'https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
-	.setDescription('These are the top three longest <@&812879135487426593> in the server\nThank you for your support <:wavyheart:893239268309344266>')
-	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
-	.addFields(
-        { name: '\u200B', value: '\u200B' },
-		{ name: "🥇 : " + await getName(guild.members, names[0]), value: "*since " + dates[0].toLocaleDateString() + "*" },
-		{ name: '🥈 : ' + await getName(guild.members, names[1]), value: "*since " + dates[1].toLocaleDateString() + "*" },
-		{ name: '🥉 : ' + await getName(guild.members, names[2]), value: "*since " + dates[2].toLocaleDateString() + "*" },
-        { name: '\u200B', value: '\u200B' },
-    )
-	ldbEmbed
-	.setFooter({
-        text: 'Updated hourly'
-    });
-
-    return ldbEmbed;
 }
 
 async function getName(members, id) {
