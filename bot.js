@@ -3,6 +3,7 @@ const market = require('./market')
 const casino = require('./casino')
 const leaderboard = require('./leaderboard')
 const royalty = require('./royalty')
+const royaltyCMD = require('./commands/royalty')
 const cron = require('node-cron');
 const database = require('./firebaseSDK');
 const vote = require('./voting')
@@ -54,7 +55,7 @@ client.on('ready', async () => {
         if (m.user.id != '813021543998554122' && m.user.id != '812904867462643713')
             currRoyalty.push(m.user.id)
     })
-    royalty.updateRoyalty(client.members, currRoyalty)
+    royalty.updateRoyalty(wavy.members, wavy.roles, currRoyalty)
 
     vote.votingSystemPP(client)
 });
@@ -74,10 +75,11 @@ client.on('messageCreate', async message => {
     const cmd = args[0].slice(prefix.length).toLowerCase();
   
     if (cmd == 'guide') {
-        let replyChannel = await client.channels.fetch(message.channel.id)
-        guide.guideCommand(replyChannel)
+        guide.guideCommand(message.channel)
     } else if (cmd == 'edit') {
         edit.editCommand(client, message)
+    } else if (cmd == 'royalty') {
+        royaltyCMD.royaltyCommand(client, message.channel)
     } else if (cmd == 'test') {
         checkExpirations()
     }

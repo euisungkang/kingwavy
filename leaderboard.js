@@ -1,13 +1,34 @@
 const database = require('./firebaseSDK')
 const { EmbedBuilder } = require('discord.js');
 
+//POTENTIAL BUG: If 2nd place is duplicated
+
 async function updateLeaderboards(guild, channel) {
     console.log('updating ldb')
+
+    let badgeEmbed = await getBadgeEmbed(guild)
+    let badgeMSG = await database.getLDBBadgeMessage()
+
+    let exists = true
+    try {
+        await channel.messages.fetch(badgeMSG)
+    } catch(err) {
+        console.log("No Badge Leaderboard msg detected: creating new message")
+        exists = false
+    } finally {
+        if (!exists) {
+            let msg = await channel.send({ embeds: [badgeEmbed] })
+            database.updateLDBBadgeMessage(msg.id)
+        } else {
+            let msg = await channel.messages.fetch(badgeMSG)
+            msg.edit(badgeEmbed)
+        }
+    }
 
     let boostEmbed = await getBoostEmbed(guild)
     let boostMSG = await database.getLDBBoostMessage()
 
-    let exists = true
+    exists = true
     try {
         await channel.messages.fetch(boostMSG)
     } catch(err) {
@@ -23,7 +44,7 @@ async function updateLeaderboards(guild, channel) {
         }
     }
 
-    let currencyEmbed = await getEmbedCurr(guild.members)
+    let currencyEmbed = await getCurrEmbed(guild.members)
     let currencyMSG = await database.getLDBHistoryMessage()
 
     exists = true
@@ -31,6 +52,7 @@ async function updateLeaderboards(guild, channel) {
         await channel.messages.fetch(currencyMSG)
     } catch(err) {
         console.log("No Currency Leaderboard msg detected: creating new message")
+        exists = false
     } finally {
         if (!exists) {
             let msg = await channel.send({ embeds: [currencyEmbed] })
@@ -40,6 +62,18 @@ async function updateLeaderboards(guild, channel) {
             msg.edit(currencyEmbed)
         }
     }
+}
+
+async function getBadgeEmbed(guild) {
+    const badgeEmbed = new EmbedBuilder()
+	.setColor('#ff6ad5')
+	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Badge Leaderboards")
+	.setDescription('These are the top three members with the most **blinged** profiles\n*Check your amount of badges using the $edit command*')
+	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
+
+
+
+    return badgeEmbed
 }
 
 async function getBoostEmbed(guild) {
@@ -58,12 +92,11 @@ async function getBoostEmbed(guild) {
 
     let royalty = await database.getRoyalty()
 
-    await filterDuplicates("boost", royalty, topBoosters)
+    //await filterDuplicates("boost", royalty, topBoosters)
 
     const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
 	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Boost Leaderboards")
-//	.setAuthor('𝒦𝒾𝓃𝑔 𝓌𝒶𝓋𝓎', 'https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
 	.setDescription('These are the top three longest <@&812879135487426593> in the server\nThank you for your support <:wavyheart:893239268309344266>')
 	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
 	.addFields(
@@ -81,14 +114,14 @@ async function getBoostEmbed(guild) {
     return ldbEmbed;
 }
 
-async function getEmbedCurr(members) {
+async function getCurrEmbed(members) {
     let top5 = await database.getTopWallets();
     let top5Keys = Array.from(top5.keys());
     let top5Values = Array.from(top5.values());
     
     let royalty = await database.getRoyalty()
 
-    await filterDuplicates("currency", royalty, top5)
+    //await filterDuplicates("currency", royalty, top5)
 
     const ldbEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
@@ -125,7 +158,7 @@ async function filterDuplicates(type, royalty, ts) {
 
     // If user is fixed, then user always gets boost as royalty
     if (royalty[type].fixed === true)
-    database.editRoyalty(type, true, top)
+        database.editRoyalty(type, true, top)
 
     // If not fixed, check for duplicates
     else {
@@ -148,7 +181,5 @@ async function getName(members, id) {
 }
 
 module.exports = {
-    updateLeaderboards : updateLeaderboards,
-    getEmbedCurr : getEmbedCurr,
-    getBoostEmbed : getBoostEmbed
+    updateLeaderboards : updateLeaderboards
 }

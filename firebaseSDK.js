@@ -54,6 +54,28 @@ async function updateLDBHistoryMessage(msg) {
     })
 }
 
+async function getLDBBadgeMessage() {
+    let meta = await db.collection('leaderboards').doc('meta')
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().badge
+    
+    return false
+}
+
+async function updateLDBBadgeMessage(msg) {
+    let meta = await db.collection('leaderboards').doc('meta')
+
+    await meta.update({
+        badge: msg
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: LDB Badge Message")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function getLDBBoostMessage() {
     let meta = await db.collection('leaderboards').doc('meta')
     const doc = await meta.get()
@@ -452,6 +474,8 @@ module.exports = {
     updateLDBHistoryMessage : updateLDBHistoryMessage,
     getLDBBoostMessage : getLDBBoostMessage,
     updateLDBBoostMessage : updateLDBBoostMessage,
+    getLDBBadgeMessage : getLDBBadgeMessage,
+    updateLDBBadgeMessage : updateLDBBadgeMessage,
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,
