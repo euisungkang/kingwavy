@@ -287,6 +287,16 @@ async function updateRestrictedServerIcon(res) {
     })
 }
 
+async function getAllBadges() {
+    let userDB = db.collection('market').doc('badges')
+    const doc = await userDB.get()
+    let badges = doc.data().badges
+
+    const sorted = new Map((Object.entries(badges).sort((a, b) => b[1].length - a[1].length)))
+
+    return sorted
+}
+
 async function getBadges(id) {
     let userDB = db.collection('market').doc('badges')
     
@@ -484,6 +494,7 @@ module.exports = {
     removeCurrency : removeCurrency,
     removeCum : removeCum,
     updateBadges : updateBadges,
+    getAllBadges: getAllBadges,
     getBadges : getBadges,
     editBadges : editBadges,
     updateRoles : updateRoles,

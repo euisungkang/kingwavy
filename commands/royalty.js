@@ -22,6 +22,8 @@ async function getEmbed(royalty, IDS) {
     .setTitle('【 𝓦 𝓪 𝓿 𝔂 】Royalty')
     .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
     
+    royalty.addFields({ name: "These are the <@&813024016776167485> of 𝓦 𝓪 𝓿 𝔂", value: "\u200B" })
+
     royalty.forEach(async (r, i) => {
         embed.addFields({ name: r.user.username, value: IDS[i][0] })
     })

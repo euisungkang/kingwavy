@@ -8,7 +8,7 @@ async function updateLeaderboards(guild, channel) {
 
     let badgeEmbed = await getBadgeEmbed(guild)
     let badgeMSG = await database.getLDBBadgeMessage()
-
+    
     let exists = true
     try {
         await channel.messages.fetch(badgeMSG)
@@ -21,7 +21,7 @@ async function updateLeaderboards(guild, channel) {
             database.updateLDBBadgeMessage(msg.id)
         } else {
             let msg = await channel.messages.fetch(badgeMSG)
-            msg.edit(badgeEmbed)
+            msg.edit({ embeds: [badgeEmbed]} )
         }
     }
 
@@ -40,7 +40,7 @@ async function updateLeaderboards(guild, channel) {
             database.updateLDBBoostMessage(msg.id)
         } else {
             let msg = await channel.messages.fetch(boostMSG)
-            msg.edit(boostEmbed)
+            msg.edit({ embed: [boostEmbed]} )
         }
     }
 
@@ -59,19 +59,40 @@ async function updateLeaderboards(guild, channel) {
             database.updateLDBHistoryMessage(msg.id)
         } else {
             let msg = await channel.messages.fetch(currencyMSG)
-            msg.edit(currencyEmbed)
+            msg.edit({ embed: [currencyEmbed]} )
         }
     }
 }
 
 async function getBadgeEmbed(guild) {
+    const badges = await database.getAllBadges()
+
     const badgeEmbed = new EmbedBuilder()
 	.setColor('#ff6ad5')
 	.setTitle("【 𝓦 𝓪 𝓿 𝔂 】 Badge Leaderboards")
 	.setDescription('These are the top three members with the most **blinged** profiles\n*Check your amount of badges using the $edit command*')
 	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
 
+    let medals = ['🥇', '🥈', '🥉']
 
+    await [...badges.entries()].forEach(async (entry, i) => {
+        let key = entry[0]
+        let value = entry[1]
+
+        let target = await guild.members.fetch(key, { force: true })
+
+        badgeEmbed.addFields(
+            { name: "\u200B\n" + medals[i] + " : " + target.user.username, value: "*" + value.length + " Badge(s)*" }
+        )
+        await value.forEach((b, i) => {
+            badgeEmbed.addFields({ name: "" + (i + 1), value: "<@&" + b.id + ">", inline: true })
+        })
+
+        console.log(i)
+        if (i == 0) 
+            badgeEmbed.addFields({ name: "\u200B", value: "\u200B" })
+
+    })
 
     return badgeEmbed
 }
