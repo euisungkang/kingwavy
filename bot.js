@@ -2,10 +2,13 @@ const { Client, GatewayIntentBits, EmbedBuilder, ActivityType } = require('disco
 const market = require('./market')
 const casino = require('./casino')
 const leaderboard = require('./leaderboard')
+const royalty = require('./royalty')
+const royaltyCMD = require('./commands/royalty')
 const cron = require('node-cron');
 const database = require('./firebaseSDK');
 const vote = require('./voting')
 const edit = require('./commands/edit')
+const guide = require('./commands/guide')
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -45,7 +48,14 @@ client.on('ready', async () => {
     // Update leaderboards
     //let ldb_channel = await client.channels.fetch(process.env.LEADERBOARD_CHANNEL)
     let ldb_channel = await client.channels.fetch('824376092257157120')
-    leaderboardUpdate(ldb_channel);
+    leaderboard.updateLeaderboards(wavy, ldb_channel)
+
+    currRoyalty = []
+    await wavy.roles.cache.get('813024016776167485').members.map(m => {
+        if (m.user.id != '813021543998554122' && m.user.id != '812904867462643713')
+            currRoyalty.push(m.user.id)
+    })
+    royalty.updateRoyalty(wavy.members, wavy.roles, currRoyalty)
 
     vote.votingSystemPP(client)
 });
@@ -58,18 +68,20 @@ client.on('guildMemberAdd', member => {
     member.roles.add(role);
 });
 
-client.on('messageCreate', message => {
+client.on('messageCreate', async message => {
     if (!message.content.startsWith(prefix)) return;
 
     const args = message.content.trim().split(/ +/g);
     const cmd = args[0].slice(prefix.length).toLowerCase();
   
     if (cmd == 'guide') {
-        guideCommand(message)
+        guide.guideCommand(message.channel)
     } else if (cmd == 'edit') {
         edit.editCommand(client, message)
+    } else if (cmd == 'royalty') {
+        royaltyCMD.royaltyCommand(client, message.channel)
     } else if (cmd == 'test') {
-        test()
+        checkExpirations()
     }
 });
 
@@ -86,7 +98,7 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     }
 });
 
-async function test() {
+async function checkExpirations() {
     console.log("Checking Restrictions")
 
     let nicknames = await database.getRestrictedNicknames();
@@ -147,7 +159,7 @@ async function test() {
 
 // Start of every day, see if anyone's restrictions are released
 cron.schedule('1 0 * * *', async () => {
-    test()
+    checkExpirations()
 })
 
 // cron.schedule('00 5 * * *', () => {
@@ -160,29 +172,6 @@ cron.schedule('00 1 1 * *', async () => {
     let ldb_channel = await client.channels.fetch('824376092257157120')
     leaderboardUpdate(ldb_channel)
 })
-
-async function guideCommand(msg) {
-    let replyChannel = await client.channels.fetch(msg.channel.id)
-
-    let embed = new EmbedBuilder()
-    .setColor('#ff6ad5')
-    .setTitle("【 𝓦 𝓪 𝓿 𝔂 】  Guide")
-    .setThumbnail('https://cdn.discordapp.com/app-icons/813021543998554122/63a65ef8e3f8f0700f7a8d462de63639.png?size=512')
-    .addFields(
-        { name: "Currency System", value: "<#824106380222005288>: Learn About the 𝓦 𝓪 𝓿 𝔂 currency system\n\n"},
-        //{ name: '\u200B', value: '\u200B' },
-        { name: "Announcements", value: "<#813132145966186567>: Stay updated on new features and raffles"},
-        { name: "Raffles/Giveaways", value: "<#962308831944265768>: Spend coins for a chance at irl rewards"},
-        { name: "Market", value: "<#820051777650556990>: Spend coins to buy server perks and features"},
-        { name: "Casino", value: "<#825143682139029555>: Learn casino games to earn coins against others"}
-    )
-    .setFooter({
-        text: 'Type ./$help <CommandName>./ for bot commands',
-        iconURL: 'https://cdn.discordapp.com/app-icons/812904867462643713/c3713856eae103c4cad96111e26bce21.png?size=512'
-    });
-
-    return await replyChannel.send({ embeds: [embed] })
-}
 
 async function editCommand(msg) {
     const wavy = await client.guilds.resolve('687839393444397105')
@@ -338,47 +327,6 @@ async function editCommand(msg) {
 
     // Resolve Request
     // Update database and appropriate server features
-}
-
-async function leaderboardUpdate(channel) {
-    console.log("updating ldb");
-
-    let ldbEmbed2 = await leaderboard.getEmbedBoost(client)
-    let boostLDB = await database.getLDBBoostMessage()
-
-    let exists = true
-    try {
-        await channel.messages.fetch(boostLDB)
-    } catch (error) {
-        console.error(error)
-        exists = false;
-    } finally {
-        if (!exists) {
-            let msg = await channel.send({ embeds: [ldbEmbed2] })
-            database.updateLDBBoostMessage(msg.id)
-        } else {
-            let msg = await channel.messages.fetch(boostLDB)
-            msg.edit(ldbEmbed2);
-        }
-    }
-
-    let ldbEmbed = await leaderboard.getEmbedCurr(client);
-    let historyLDB = await database.getLDBHistoryMessage()
-    exists = true;
-    try {
-        await channel.messages.fetch(historyLDB)
-    } catch (error) {
-        console.error(error)
-        exists = false;
-    } finally {
-        if (!exists) {
-            let msg = await channel.send({ embeds: [ldbEmbed] })
-            database.updateLDBHistoryMessage(msg.id)
-        } else {
-            let msg = await channel.messages.fetch(historyLDB)
-            msg.edit(ldbEmbed);
-        }
-    }
 }
 
 async function marketUpdate(channel, logs, guild) {

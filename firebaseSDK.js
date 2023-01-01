@@ -54,6 +54,28 @@ async function updateLDBHistoryMessage(msg) {
     })
 }
 
+async function getLDBBadgeMessage() {
+    let meta = await db.collection('leaderboards').doc('meta')
+    const doc = await meta.get()
+
+    if (doc.exists)
+        return doc.data().badge
+    
+    return false
+}
+
+async function updateLDBBadgeMessage(msg) {
+    let meta = await db.collection('leaderboards').doc('meta')
+
+    await meta.update({
+        badge: msg
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: LDB Badge Message")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function getLDBBoostMessage() {
     let meta = await db.collection('leaderboards').doc('meta')
     const doc = await meta.get()
@@ -265,6 +287,16 @@ async function updateRestrictedServerIcon(res) {
     })
 }
 
+async function getAllBadges() {
+    let userDB = db.collection('market').doc('badges')
+    const doc = await userDB.get()
+    let badges = doc.data().badges
+
+    const sorted = new Map((Object.entries(badges).sort((a, b) => b[1].length - a[1].length)))
+
+    return sorted
+}
+
 async function getBadges(id) {
     let userDB = db.collection('market').doc('badges')
     
@@ -367,6 +399,37 @@ async function hasCustomRole(id) {
     return roles.hasOwnProperty(id)
 }
 
+async function getRoyalty() {
+    let userDB = db.collection('meta').doc('royalty')
+    const doc = await userDB.get()
+
+    return await doc.data().current
+}
+
+async function editRoyalty(title, fixed, id) {
+    let userDB = db.collection('meta').doc('royalty')
+    const doc = await userDB.get()
+    let royalty = await doc.data().current
+
+    //console.log("ROYALTY ID: " + royalty[title].id + " == " + id + "\nROYALTY FIXED: " + royalty[title].fixed + " == " + fixed)
+
+    if (royalty.hasOwnProperty(title) && royalty[title].id == id && royalty[title].fixed == fixed)
+        return
+
+    royalty[title] = {
+        id: id,
+        fixed: fixed
+    }
+
+    await userDB.update({
+        current: royalty
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: Royalty Updated")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+}
+
 async function getAllSubscriptions(id) {
     let userDB = db.collection('market')
     const roles = userDB.doc('roles')
@@ -421,6 +484,8 @@ module.exports = {
     updateLDBHistoryMessage : updateLDBHistoryMessage,
     getLDBBoostMessage : getLDBBoostMessage,
     updateLDBBoostMessage : updateLDBBoostMessage,
+    getLDBBadgeMessage : getLDBBadgeMessage,
+    updateLDBBadgeMessage : updateLDBBadgeMessage,
     getTopWallets : getTopWallets,
     getProducts : getProducts,
     getCurrency : getCurrency,
@@ -429,11 +494,14 @@ module.exports = {
     removeCurrency : removeCurrency,
     removeCum : removeCum,
     updateBadges : updateBadges,
+    getAllBadges: getAllBadges,
     getBadges : getBadges,
     editBadges : editBadges,
     updateRoles : updateRoles,
     editRole: editRole,
     hasCustomRole : hasCustomRole,
+    getRoyalty : getRoyalty,
+    editRoyalty : editRoyalty,
     getRestrictedNicknames : getRestrictedNicknames,
     updateRestrictedNicknames : updateRestrictedNicknames,
     getRestrictedServerName : getRestrictedServerName,
