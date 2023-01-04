@@ -98,6 +98,35 @@ async function updateLDBBoostMessage(msg) {
     })
 }
 
+async function walletStatus(id) {
+    let wallets = db.collection('wallets').doc(id)
+    const doc = await wallets.get()
+
+    if (!doc.exists) 
+        return false
+    if (doc.data().status == undefined) {
+        await wallets.update({
+            status: true
+        }).then(() => {
+            console.log("[DATABASE] Document written successfully: Wallet Status unknown, set to true")
+        }).catch(err => {
+            console.log("Error: " + err)
+        })
+
+        return true
+    }
+
+    await wallets.update({
+        status: !doc.data().status
+    }).then(() => {
+        console.log("[DATABASE] Document written successfully: !status set")
+    }).catch(err => {
+        console.log("Error: " + err)
+    })
+
+    return true
+}
+
 async function getTopWallets() {
     const wallets = await db.collection('wallets').get();
     let walletmap = new Map();
@@ -477,7 +506,13 @@ async function getRolePositions() {
     return roles
 }
 
+async function getAllWallets() {
+    let userDB = await db.collection('wallets').get()
+    return userDB.docs.map(doc => doc.data())
+}
+
 module.exports = {
+    walletStatus : walletStatus,
     getMarketMessage : getMarketMessage,
     updateMarketMessage : updateMarketMessage,
     getLDBHistoryMessage : getLDBHistoryMessage,
@@ -509,5 +544,6 @@ module.exports = {
     getRestrictedServerIcon : getRestrictedServerIcon,
     updateRestrictedServerIcon : updateRestrictedServerIcon,
     getAllSubscriptions : getAllSubscriptions,
-    getRolePositions : getRolePositions
+    getRolePositions : getRolePositions,
+    getAllWallets : getAllWallets,
 }

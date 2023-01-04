@@ -44,6 +44,7 @@ async function updateLeaderboards(guild, channel) {
         }
     }
 
+    // BUG SAME THING POSSIBLE NULL/UNDEFINED
     let currencyEmbed = await getCurrEmbed(guild.members)
     let currencyMSG = await database.getLDBHistoryMessage()
 
@@ -88,7 +89,6 @@ async function getBadgeEmbed(guild) {
             badgeEmbed.addFields({ name: "" + (i + 1), value: "<@&" + b.id + ">", inline: true })
         })
 
-        console.log(i)
         if (i == 0) 
             badgeEmbed.addFields({ name: "\u200B", value: "\u200B" })
 
@@ -104,7 +104,7 @@ async function getBoostEmbed(guild) {
     let topBoosters = new Map()
 
     boosters.forEach(user => {
-        topBoosters.set(user.user.id, user.premiumSince)
+        topBoosters.set(user.user, user.premiumSince)
     })
 
     topBoosters = new Map([...topBoosters.entries()].sort((a, b) => a[1].getTime() - b[1].getTime()))
@@ -122,9 +122,9 @@ async function getBoostEmbed(guild) {
 	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
 	.addFields(
         { name: '\u200B', value: '\u200B' },
-		{ name: "🥇 : " + await getName(guild.members, names[0]), value: "*since " + dates[0].toLocaleDateString() + "*" },
-		{ name: '🥈 : ' + await getName(guild.members, names[1]), value: "*since " + dates[1].toLocaleDateString() + "*" },
-		{ name: '🥉 : ' + await getName(guild.members, names[2]), value: "*since " + dates[2].toLocaleDateString() + "*" },
+		{ name: "🥇 : " + names[0].username, value: "*since " + dates[0].toLocaleDateString() + "*" },
+		{ name: '🥈 : ' + names[1].username, value: "*since " + dates[1].toLocaleDateString() + "*" },
+		{ name: '🥉 : ' + names[2].username, value: "*since " + dates[2].toLocaleDateString() + "*" },
         { name: '\u200B', value: '\u200B' },
     )
 	ldbEmbed
@@ -139,6 +139,7 @@ async function getCurrEmbed(members) {
     let top5 = await database.getTopWallets();
     let top5Keys = Array.from(top5.keys());
     let top5Values = Array.from(top5.values());
+    //console.log(top5Values)
     
     let royalty = await database.getRoyalty()
 
@@ -152,16 +153,16 @@ async function getCurrEmbed(members) {
 	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
 	.addFields(
         { name: '\u200B', value: '\u200B' },
-		{ name: "🥇 : " + await getName(members, top5Keys[0]), value: top5Values[0] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: "🥇 : " + await getName(members, top5Keys[0], top5Values[0]), value: top5Values[0] + "   <:HentaiCoin:814968693981184030>" },
         { name: '\u200B', value: '\u200B' },
-		{ name: '🥈 : ' + await getName(members, top5Keys[1]), value: top5Values[1] + "   <:HentaiCoin:814968693981184030>" },
-		{ name: '🥉 : ' + await getName(members, top5Keys[2]), value: top5Values[2] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: '🥈 : ' + await getName(members, top5Keys[1], top5Values[2]), value: top5Values[1] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: '🥉 : ' + await getName(members, top5Keys[2], top5Values[3]), value: top5Values[2] + "   <:HentaiCoin:814968693981184030>" },
         { name: '\u200B', value: '\u200B' },
     )
 
     for (var i = 3; i < top5Keys.length; i++) {
         ldbEmbed.addFields(
-            { name: (i + 1) + ": " + await getName(members, top5Keys[i]), value: top5Values[i] + "   <:HentaiCoin:814968693981184030>", inline: true }
+            { name: (i + 1) + ": " + await getName(members, top5Keys[i], top5Values[i]), value: top5Values[i] + "   <:HentaiCoin:814968693981184030>", inline: true }
         )
     }
 
@@ -197,7 +198,13 @@ async function filterDuplicates(type, royalty, ts) {
 }
 
 async function getName(members, id) {
-    let member = await members.fetch(id, { force: true })
+    let member = await members.fetch(id, { force: true }).catch(err => {
+        console.log("User does not exist: " + err)
+        return null
+    })
+    if (member == null)
+        return null
+
     return member.user.username;
 }
 
