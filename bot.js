@@ -33,6 +33,21 @@ client.on('ready', async () => {
     // Wavy Guild
     const wavy = await client.guilds.resolve('687839393444397105')
 
+    let all = await database.getAllWallets()
+
+    let allUsers = [...all.values()]
+
+    await allUsers.forEach(async user => {
+        let member = await wavy.members.fetch("" + user.userID, {force: true}).catch(err => {
+            console.log(err)
+            console.log(user.name + "    " + user.userID)
+            return false
+        })
+        //await database.walletStatus(user.userID)
+    })
+
+    // BUG: STRANGE BUG WITH USERS WHO ARE OR ARE NOT IN THE SERVER (FETCH)
+
     // Update markets
     //let mkt_channel = await client.channels.fetch(process.env.MARKET_CHANNEL)
     let mkt_channel = await client.channels.fetch('820051777650556990')
@@ -67,6 +82,15 @@ client.on('guildMemberAdd', member => {
     let role = member.guild.roles.cache.find(role => role.id == "812926342249185320")
     member.roles.add(role);
 });
+
+client.on('guildMemberRemove', async member => {
+    console.log("User: " + member.user.username + ' has left the server!')
+
+    let status = await database.walletStatus(member.user.id)
+    if (status === true)
+        return
+        //STUB: SEND RECEIPT 
+})
 
 client.on('messageCreate', async message => {
     if (!message.content.startsWith(prefix)) return;
