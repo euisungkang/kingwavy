@@ -33,18 +33,18 @@ client.on('ready', async () => {
     // Wavy Guild
     const wavy = await client.guilds.resolve('687839393444397105')
 
-    let all = await database.getAllWallets()
+    // let all = await database.getAllWallets()
 
-    let allUsers = [...all.values()]
+    // let allUsers = [...all.values()]
 
-    await allUsers.forEach(async user => {
-        let member = await wavy.members.fetch("" + user.userID, {force: true}).catch(err => {
-            console.log(err)
-            console.log(user.name + "    " + user.userID)
-            return false
-        })
-        //await database.walletStatus(user.userID)
-    })
+    // await allUsers.forEach(async user => {
+    //     let member = await wavy.members.fetch("" + user.userID, {force: true}).catch(err => {
+    //         console.log(err)
+    //         console.log(user.name + "    " + user.userID)
+    //         return false
+    //     })
+    //     //await database.walletStatus(user.userID)
+    // })
 
     // BUG: STRANGE BUG WITH USERS WHO ARE OR ARE NOT IN THE SERVER (FETCH)
 
