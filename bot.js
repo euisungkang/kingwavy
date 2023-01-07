@@ -103,7 +103,8 @@ client.on('messageCreate', async message => {
     } else if (cmd == 'edit') {
         edit.editCommand(client, message)
     } else if (cmd == 'royalty') {
-        royaltyCMD.royaltyCommand(client, message.channel)
+        console.log("royalty command blocked")
+        //royaltyCMD.royaltyCommand(client, message.channel)
     } else if (cmd == 'test') {
         checkExpirations()
     }
