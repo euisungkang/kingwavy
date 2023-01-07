@@ -127,7 +127,7 @@ async function walletStatus(id) {
     return true
 }
 
-async function getTopWallets() {
+async function getTopWallets(members) {
     const wallets = await db.collection('wallets').get();
     let walletmap = new Map();
 
@@ -139,6 +139,22 @@ async function getTopWallets() {
     })
 
     const sorted = new Map([...walletmap.entries()].sort((a, b) => b[1] - a[1]));
+    //console.log(sorted)
+
+    let i = 0
+    for (const [key,] of sorted) {
+        if (i == 9)
+            break
+        // console.log(key)
+        let member = await members.fetch(key, { force: true }).catch(err => {
+            console.log("User does not exist: " + key + "\nRemoved from Leaderboards")
+            return null
+        })
+        if (member == null)
+            sorted.delete(key)
+
+        i++
+    }
 
     let finalMap = new Map()
     let sliced = [...sorted.keys()].slice(0, 9)

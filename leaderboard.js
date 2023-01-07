@@ -136,12 +136,11 @@ async function getBoostEmbed(guild) {
 }
 
 async function getCurrEmbed(members) {
-    let top5 = await database.getTopWallets();
+    let top5 = await database.getTopWallets(members);
     let top5Keys = Array.from(top5.keys());
     let top5Values = Array.from(top5.values());
-    //console.log(top5Values)
     
-    let royalty = await database.getRoyalty()
+    //let royalty = await database.getRoyalty()
 
     //await filterDuplicates("currency", royalty, top5)
 
@@ -153,10 +152,10 @@ async function getCurrEmbed(members) {
 	.setThumbnail('https://i.ibb.co/5kL7hBD/Wavy-Logo.png')
 	.addFields(
         { name: '\u200B', value: '\u200B' },
-		{ name: "🥇 : " + await getName(members, top5Keys[0], top5Values[0]), value: top5Values[0] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: "🥇 : " + await getName(members, top5Keys[0]), value: top5Values[0] + "   <:HentaiCoin:814968693981184030>" },
         { name: '\u200B', value: '\u200B' },
-		{ name: '🥈 : ' + await getName(members, top5Keys[1], top5Values[2]), value: top5Values[1] + "   <:HentaiCoin:814968693981184030>" },
-		{ name: '🥉 : ' + await getName(members, top5Keys[2], top5Values[3]), value: top5Values[2] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: '🥈 : ' + await getName(members, top5Keys[1]), value: top5Values[1] + "   <:HentaiCoin:814968693981184030>" },
+		{ name: '🥉 : ' + await getName(members, top5Keys[2]), value: top5Values[2] + "   <:HentaiCoin:814968693981184030>" },
         { name: '\u200B', value: '\u200B' },
     )
 
@@ -199,6 +198,7 @@ async function filterDuplicates(type, royalty, ts) {
 
 async function getName(members, id) {
     let member = await members.fetch(id, { force: true }).catch(err => {
+        console.log(id)
         console.log("User does not exist: " + err)
         return null
     })
